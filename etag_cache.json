@@ -3,5 +3,10 @@
   "pallets/flask": "W/\"7490fc92a6f7ac71ed6bf8258a7f68a44db009c6c433e904a492b0f5f6de0a04\"",
   "psf/requests": "W/\"57af5a0ad8391587a3e53df88cc6369ed1600563fffd01e1c676720c53f42ca1\"",
   "github/gitignore": "W/\"84fbb1164e8030b9101e41ef76cfa28f8c53e7ed5a9f4975178f973905374a9e\"",
-  "octocat/Hello-World": "W/\"78a6d204268cd5cb6f76f6db93c99fb2b6f04800f339dc0a285a14d2bee5ae2e\""
+  "octocat/Hello-World": "W/\"78a6d204268cd5cb6f76f6db93c99fb2b6f04800f339dc0a285a14d2bee5ae2e\"",
+  "commits:tiangolo/fastapi": "W/\"ae92773f7acedb33de3dbe9d7dfc52f0af0ca26ccefd00964b1f8dc65adf3f3b\"",
+  "commits:pallets/flask": "W/\"f3719ec4afc667daff2c6e352e197fddc20fba0c36becdbb5bc8bc2b4ed4c2eb\"",
+  "commits:psf/requests": "W/\"603b51048418d538bd10a98899b9c0ee022d41430bfeb5199a6262bb4da3521c\"",
+  "commits:github/gitignore": "W/\"390887994ac1848c2f0d837994043a45413ff9f9f39abf65ea080a09f8fd6235\"",
+  "commits:octocat/Hello-World": "W/\"8f31fba412f8941ae6b7e7b4900d159fff2e1ab2b022218c47aa9c7d3d70de38\""
 }

@@ -14,3 +14,4 @@
 {"ts": "2026-11-25T16:06:46Z", "run_id": "2a00b8e02e80", "event": "repo_pull_succeeded", "repo": "github/gitignore", "stale": false, "ci_status": "success", "days_since_commit": 0, "open_issues": 0}
 {"ts": "2026-11-25T16:06:50Z", "run_id": "2a00b8e02e80", "event": "repo_pull_succeeded", "repo": "octocat/Hello-World", "stale": true, "ci_status": "success", "days_since_commit": 5376, "open_issues": 50}
 {"ts": "2026-11-25T16:06:50Z", "run_id": "2a00b8e02e80", "event": "run_finished", "repo": null, "succeeded": 5, "attempted": 5}
+{"ts": "2026-11-25T23:57:51Z", "run_id": "0e5011cacbbb", "event": "scheduler_decision", "repo": null, "should_pull": false, "reason": "not_due", "checked_at": "2026-11-25T23:57:49Z", "pulls_in_last_24h": 2, "cap": 3, "last_pull_at": "2026-11-25T16:06:30Z", "changed_repos": [], "unknown_repos": [], "reason_detail": "only 7.9h since the last pull (< 24h baseline) and no change detected (or no repos were given to check)."}
