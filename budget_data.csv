@@ -1,0 +1,6 @@
+repo,planned_budget_usd,spent_to_date_usd,notes
+tiangolo/fastapi,85000,71000,REPRESENTATIVE DATA - demo only
+pallets/flask,60000,61500,REPRESENTATIVE DATA - demo only
+psf/requests,45000,38000,REPRESENTATIVE DATA - demo only
+github/gitignore,15000,4200,REPRESENTATIVE DATA - demo only
+octocat/Hello-World,20000,20500,REPRESENTATIVE DATA - demo only

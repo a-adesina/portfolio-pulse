@@ -1,0 +1,14 @@
+# Base pipeline (github_status_pull.py, pulse_core.py, generate_report.py,
+# generate_dashboard.py, verify_pull.py) needs only:
+requests
+
+# The MCP layer (mcp_server.py, agent_client.py) additionally needs:
+mcp>=2.0
+anthropic>=1.8
+
+# Install with:
+#   pip install -r requirements.txt
+# If you hit a system-package conflict (a Debian-managed PyJWT or similar),
+# use a virtual environment instead:
+#   python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+# That conflict is real, not hypothetical, it happened building this.

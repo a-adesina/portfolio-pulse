@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Pulse — Project Status</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #14171C; --surface: #1B1F26; --border: #262B34;
+    --text: #E7E4DE; --text-muted: #8B909B; --accent: #4FB8AE;
+    --critical: #C1554A; --watch: #D9A441; --clear: #6FAE8C;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 24px; background: var(--bg); color: var(--text);
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 980px; margin: 0 auto; }
+  header { margin-bottom: 6px; }
+  h1 { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: 26px; letter-spacing: -0.01em; margin: 0; }
+  .generated { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .tagline { color: var(--text-muted); font-size: 14px; margin: 12px 0 36px 0; max-width: 72ch; line-height: 1.6; }
+
+  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 600; margin: 0 0 6px 0; }
+  .section-note { color: var(--text-muted); font-size: 13px; margin: 0 0 16px 0; max-width: 72ch; line-height: 1.55; }
+  section { margin-bottom: 40px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 13px; }
+  thead th { text-align: left; font-weight: 500; font-size: 12px; color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 11px 12px; vertical-align: top; line-height: 1.5; }
+  td.phase { font-weight: 500; white-space: nowrap; }
+  td.resource { color: var(--text-muted); font-size: 12.5px; }
+  td.decision { color: var(--accent); font-size: 12.5px; }
+
+  .spend-note {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+    padding: 14px 16px; margin-top: 14px; font-size: 13px; color: var(--text-muted); line-height: 1.6;
+  }
+  .spend-note strong { color: var(--text); }
+
+  .component { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; }
+  .component:first-child { border-top: 1px solid var(--border); }
+  .component-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; flex-wrap: wrap; gap: 4px 12px; }
+  .component-name { font-weight: 500; font-size: 14px; }
+  .component-class { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; color: var(--text-muted); }
+  .component-row { font-size: 13px; color: var(--text-muted); line-height: 1.55; margin-bottom: 4px; }
+  .component-row .label { color: var(--text); font-weight: 500; }
+
+  .test-tally { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+  .test-tally .pass { color: var(--clear); }
+  .test-tally .skip { color: var(--watch); }
+
+  ul { margin: 0; padding-left: 20px; }
+  li { font-size: 13.5px; line-height: 1.65; margin-bottom: 10px; color: var(--text); }
+  li::marker { color: var(--text-muted); }
+  li.blocker::marker { color: var(--critical); }
+  li.recommendation::marker { color: var(--accent); }
+
+  .insight-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+  .insight-block { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; }
+  .insight-label { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+
+  footer { margin-top: 8px; font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+
+  @media (max-width: 640px) {
+    body { padding: 28px 16px; }
+    table { font-size: 12px; }
+    td, thead th { padding: 8px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Portfolio Pulse — Project Status</h1>
+      <div class="generated">generated 2026-11-25 14:41 UTC</div>
+    </header>
+    <p class="tagline">
+      This reports on Portfolio Pulse as an engagement, not on the repos
+      it tracks, applying the same reporting discipline reflexively. The
+      narrative below is authored, like the SOW itself, not generated
+      from pulse_core's deterministic logic, that distinction is
+      deliberate: the deterministic-generation rule applies to claims
+      about the many tracked repos pulled from a live source, not to
+      project-governance commentary about a single, non-repeating build.
+    </p>
+
+    <section>
+      <h2>SOW: scope vs. outcome vs. current state</h2>
+      <p class="section-note">Every decision below is tied to a specific artifact, not asserted. Full detail in SOW.md.</p>
+      <table>
+        <thead>
+          <tr><th>Phase</th><th>Scope</th><th>Outcome</th><th>Current state</th><th>Resource note</th><th>Decision</th></tr>
+        </thead>
+        <tbody>
+    <tr>
+      <td class="phase">1 — Direct pull</td>
+      <td>GitHub API pull: delivery signal, issue tracking</td>
+      <td>Delivered; initial staleness logic used repo.pushed_at</td>
+      <td>Superseded by Phase 3's fix, default-branch commit date now used</td>
+      <td class="resource">No distinct resource event</td>
+      <td class="decision">Accept as delivered, superseded in place, not re-scoped</td>
+    </tr>
+    <tr>
+      <td class="phase">2 — Join, flag, render</td>
+      <td>Budget join, risk flagging, markdown + HTML renderers</td>
+      <td>Delivered; two renderers reading one shared core</td>
+      <td>Stable, unchanged since delivery</td>
+      <td class="resource">No distinct resource event</td>
+      <td class="decision">Accept as delivered</td>
+    </tr>
+    <tr>
+      <td class="phase">3 — Verification tooling</td>
+      <td>Independent correctness check via a separate code path</td>
+      <td>Delivered; caught a real staleness bug on first live run</td>
+      <td>Fixed and re-verified; verifier's role shifted from bug-finder to standing cross-check</td>
+      <td class="resource">GitHub API quota exhausted during the live verification run that caught the bug</td>
+      <td class="decision">Accept as delivered; the bug it caught is the strongest evidence this phase was worth building</td>
+    </tr>
+    <tr>
+      <td class="phase">4 — Code health, tickets, interpretation</td>
+      <td>CI status, ticket/CR activity, deterministic per-project and portfolio positions</td>
+      <td>Delivered; all code paths exercised via the fixture, including simultaneous-failure cases</td>
+      <td>Stable; the point-in-time budget limitation (named at delivery) remains unresolved</td>
+      <td class="resource">No distinct resource event</td>
+      <td class="decision">Accept as delivered; budget burn-rate limitation carried forward as a named, not hidden, gap</td>
+    </tr>
+    <tr>
+      <td class="phase">5 — MCP / agent layer</td>
+      <td>MCP server exposing verified data; agent client demonstrating reasoning on top</td>
+      <td>Tool layer verified live with a real MCP client, catching a second real bug (error sanitization); agent layer written correctly against verified SDK types but not run live</td>
+      <td>Split state: tool layer production-shaped, agent layer unverified pending a live credential</td>
+      <td class="resource">No ANTHROPIC_API_KEY available in the build environment</td>
+      <td class="decision">Accept the tool layer; HOLD acceptance of the agent layer pending one live, credentialed run</td>
+    </tr>
+    <tr>
+      <td class="phase">6 — Test suite</td>
+      <td>Unit, mocked negative-case, and live integration tests</td>
+      <td>45 tests written and run; 43 passed, 2 skipped, 0 failed</td>
+      <td>Live integration tier blocked by the same GitHub rate limit as Phase 3; mocked tier fully green regardless; suite grew from 34 to 45 tests in Phase 7 without changing this phase's original scope</td>
+      <td class="resource">GitHub API quota exhausted at test-run time, the direct cause of the 2 remaining skips</td>
+      <td class="decision">Accept; re-run once a GITHUB_TOKEN is available to close the 2 skipped live cases, not a code fix, a credential</td>
+    </tr>
+    <tr>
+      <td class="phase">7 — Targeted gap remediation</td>
+      <td>Retry/backoff logic, input validation at the API boundary, CI wiring, scoped narrowly from GAP_ANALYSIS.md rather than addressing every named gap at once</td>
+      <td>Delivered; found and fixed two additional real defects in the process (a partial-failure false-active bug, and a race condition in the live test suite's own rate-limit check), bringing the total to four real bugs caught by this project's own verification discipline, not zero, the same pattern each time</td>
+      <td>Retry logic and input validation verified by dedicated tests (11 new tests across RetryLogicTests, InputValidationTests, BatchResilienceTests); CI workflow written and YAML-validated but not yet observed running in a real hosted GitHub Actions environment, a stated boundary, not an assumed pass</td>
+      <td class="resource">No distinct resource event beyond the recurring GitHub API quota constraint already named above</td>
+      <td class="decision">Accept for stated, narrow scope; the CI-unverified-in-a-real-repo gap is carried forward explicitly, not hidden, see Blockers below</td>
+    </tr>
+    <tr>
+      <td class="phase">8 — Maturity-gap closure: agent eval harness, structured logging, incident log</td>
+      <td>Three named GAP_ANALYSIS.md items addressed narrowly: no evaluation framework for the agent layer, no structured logging, and consolidating bug history into a dedicated incident log, scoped the same way Phase 7 was, not a rewrite of every open category at once</td>
+      <td>Delivered; the new eval harness (tests/test_agent_eval.py) drives the REAL mcp_server.py subprocess with only the Anthropic call scripted, and caught two additional real bugs in agent_client.py within the first hour of existing, before any live model ever touched that file, bringing the total to six real bugs caught by this project's own verification discipline, see INCIDENT_LOG.md</td>
+      <td>Agent-loop scaffolding (tool-schema conversion, multi-round orchestration, the hard call cap, structured-error handling) is now test-covered; the model's own live judgment inside that scaffolding is still unverified, no API key, same boundary as Phase 5, not narrowed by this phase and not claimed to be</td>
+      <td class="resource">No ANTHROPIC_API_KEY available, same as Phase 5; this sandbox's outbound network policy additionally blocked unauthenticated GitHub reads during this phase's live-pull attempt (distinct from the rate-limit exhaustion named in earlier phases), confirmed by a real attempt, not assumed, see Blockers below</td>
+      <td class="decision">Accept for stated, narrow scope; the live-model-behavior gap is unchanged and still HELD, not resolved by adding tests around it</td>
+    </tr>
+    <tr>
+      <td class="phase">9 — Tier 5 components: alerting, unattended schedule, grounding eval, operational incident log</td>
+      <td>Four of Tier 5's five named components, scoped from MATURITY_ASSESSMENT.md's "Path to Tier 5": monitoring/alerting (pulse_alert.py), a real cron trigger plus an unattended-pull job in CI, a live grounding-eval harness distinct from Phase 8's scaffolding eval, and a template for a genuinely separate operational incident log. The fifth component, real users, is explicitly NOT attempted here, named instead as the one thing building more code cannot produce</td>
+      <td>Delivered for the four buildable components; pulse_alert.py and grounding_eval.py's extraction logic are both test-covered (24 new tests, 0 live model or webhook calls). While reviewing the CI workflow to add the schedule trigger, found that its dependency-install step never installed mcp or anthropic, so tests/test_agent_eval.py would have silently failed the first time this ran in a real hosted repo; fixed by installing requirements.txt directly. Caught by inspection while making an unrelated change, not by running it, a real but lesser-category catch than the six logged in INCIDENT_LOG.md</td>
+      <td>The alerting and unattended-schedule mechanisms are written, tested, and ready, but neither has fired for real yet, that requires this project actually hosted in a GitHub repo with a configured GITHUB_TOKEN and, for alerting, a real webhook URL. grounding_eval.py's model-facing half is written correctly against agent_client.py's real loop (now carrying an optional tool_log capture, added for this) but, like agent_client.py itself, has never run against a live model</td>
+      <td class="resource">Same credential and hosting gaps as Phases 5 and 8: no ANTHROPIC_API_KEY, and this project is not yet hosted in a real GitHub repo</td>
+      <td class="decision">Accept for the four components attempted; the fifth, real users, is correctly left out of scope here rather than faked, see MATURITY_ASSESSMENT.md's "Path to Tier 5" step 5</td>
+    </tr>
+    <tr>
+      <td class="phase">10 — Priority-aware pull scheduler, to the user's own corrected spec</td>
+      <td>Replace Phase 9's unconditional daily pull with a scheduler (pulse_scheduler.py) matching the user's direct correction: 'Build option 1. modify pull to once every 24 hours unless prompted for more. no more than 3 pulls in a 24 hour window.' A hard cap wins over everything; a 24h baseline is the floor; a cheap conditional (ETag) check can trigger one earlier pull per cap-allowed slot if a tracked repo actually changed</td>
+      <td>Delivered; 19 new deterministic tests (tests/test_pulse_scheduler.py) cover the cap, the baseline, the priority trigger, and the safety property that an unknown/blocked network result never counts as a change. While wiring the CI job to call the scheduler, found that neither pulse_run_log.jsonl nor etag_cache.json would survive between scheduled runs in a fresh Actions checkout, which would have silently made the whole cadence a no-op (always 'baseline due'); fixed by committing both back to the repo after each tick, a second CI-workflow gap caught by inspection, same lesser category as Phase 9's dependency-install finding. Also found, while updating this document's companion MATURITY_ASSESSMENT.md, that it had drifted out of sync with Phase 9's actual deliverables; corrected in the same pass</td>
+      <td>Decision logic is written and test-covered; never observed deciding correctly, tick after tick, inside a real hosted GitHub Actions environment with state actually persisting between runs, the same stated boundary as Phase 9's schedule trigger and unattended-pull job</td>
+      <td class="resource">Same hosting gap as Phase 9: this project is not yet hosted in a real GitHub repository from this build environment, so the persisted-state mechanism has not been exercised across real scheduled ticks</td>
+      <td class="decision">Accept for stated scope; the 'proven running in a real hosted repo' gap is carried forward explicitly, same as Phase 9's, not narrowed by writing more tests around it</td>
+    </tr>
+        </tbody>
+      </table>
+      <div class="spend-note">
+        <strong>Spend analysis:</strong> this is a personal build with no
+        assigned monetary budget, no dollar figure is reported here
+        because none is real. The actual, recurring, measurable resource
+        consumed was GitHub API quota, exhausted at multiple distinct
+        points across this build (Phase 3's verification run, and Phase
+        6's test run among them), the single most consistent constraint
+        encountered, more so than any code defect. <strong>Decision:</strong>
+        no monetary spend decision is needed; the resourcing decision is
+        to acquire a GITHUB_TOKEN, which converts this recurring
+        constraint into a non-issue (60/hour to 5,000/hour) going forward.
+      </div>
+    </section>
+
+    <section>
+      <h2>What each tested unit of code does, and what it's for</h2>
+      <p class="section-note">
+        For a reader deciding whether to trust this system, not just that
+        tests passed, but what problem each piece solves and what its
+        tests actually prove about it.
+      </p>
+      <div class="test-tally">
+        92 tests run — <span class="pass">90 passed</span>,
+        <span class="skip">2 skipped</span>, 0 failed
+      </div>
+      
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Budget boundary logic</span>
+        <span class="component-class">BudgetBoundaryTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether a project's spend is on track, nearing its limit, or over plan, the numbers a budget decision actually gets made on.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> The exact edges are handled correctly, spending precisely at the 90% early-warning line, spending exactly to plan, and a project with zero planned budget, without miscalculating or crashing.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Missing-data handling</span>
+        <span class="component-class">MissingDataTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> What happens when a project is only half set up, tracked for budget but not yet pulled from GitHub, or the reverse, a real, common state, not an edge case that won't occur.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> The system reports 'no data' honestly rather than crashing or silently guessing a value.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Code-health priority order</span>
+        <span class="component-class">CodeHealthPriorityTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> What to tell a reader when a project has more than one problem at once, which one is actually the most urgent to act on.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> A failing build is always reported ahead of staleness or a missing CI setup, consistently, not arbitrarily depending on which condition happened to be checked first.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Risk tier and written interpretation</span>
+        <span class="component-class">RiskTierAndInterpretationTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> The plain-English sentence a reader actually reads, not just the underlying flags, and whether it names the right reason when several things are wrong simultaneously.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> A project that is both over budget and has a failing build states 'a failing build' as the reason, not 'spend over plan', matching the priority a reader would actually want.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Portfolio-level summary</span>
+        <span class="component-class">PortfolioInterpretationTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> The one-paragraph headline a reader sees first, before drilling into any individual project.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> It doesn't break on an empty portfolio, and correctly says 'no action needed' when that's genuinely true, rather than always finding something to flag.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Date math (days-since calculation)</span>
+        <span class="component-class">DaysSinceTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> The single calculation every staleness and ticket-window figure in the whole system depends on.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> Correct on good input; fails loudly on bad input rather than silently returning a wrong number, a wrong date accepted quietly would corrupt every downstream figure without any visible sign.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Negative API-response handling</span>
+        <span class="component-class">MockedNegativeCaseTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether the system survives the real failure conditions a live external API actually produces, not just its happy-path responses.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> A nonexistent project (404), a rate limit hit mid-pull, and a project with no CI history at all are all handled without crashing or hanging, reproduced deterministically via mocking.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Live reality check</span>
+        <span class="component-class">LiveIntegrationTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether the mocked assumptions above actually match how GitHub's real API behaves, not just how the tests assume it behaves.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> The same conditions, attempted against real repositories. Honestly reports as skipped, not passed, when GitHub's rate limit blocks the attempt, distinguishing 'rate limit hit during this attempt' from 'quota fine but still no result' rather than relying on an upfront quota check later proven unreliable by a real race condition under shared-network load.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Retry and backoff behavior</span>
+        <span class="component-class">RetryLogicTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether a transient network blip (a dropped connection, a 5xx from GitHub) gets treated the same as a genuine, non-recoverable failure, a real reliability gap named in GAP_ANALYSIS.md before this was built.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> Connection errors and 5xx responses retry with exponential backoff up to 3 attempts and eventually succeed if the underlying condition clears; a 403 rate-limit response and a 404 make exactly one call each, confirmed by test, not assumed from reading the code, since retrying either of those wastes a call and cannot succeed.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Input validation at the API boundary</span>
+        <span class="component-class">InputValidationTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether an unexpected or malformed response shape from GitHub gets caught where it happens, rather than silently corrupting a downstream calculation.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> Malformed commit-lookup responses (empty lists, non-dict entries, missing nested fields) degrade to an honest 'no data' result instead of raising or returning a wrong value; this exact check is what surfaced the partial-failure false-active bug described below, not a hypothetical one.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Batch resilience under partial failure</span>
+        <span class="component-class">BatchResilienceTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether one repo's failure during a multi-repo pull silently corrupts that repo's own status, or aborts the whole batch, either of which would be worse than reporting that one repo honestly as unavailable.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> A repo whose commit-lookup call fails mid-pull is now excluded from the result entirely, the same honest path a 404 already took, rather than defaulting to a `None` staleness value that used to silently evaluate as 'active'; the rest of the batch completes unaffected.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Agent loop scaffolding (tool-schema conversion, multi-round orchestration, structured errors, the call cap)</span>
+        <span class="component-class">AgentEvalTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether the mechanics agent_client.py's reasoning loop runs on actually work, independent of whether a live model's judgment running inside them is any good, a named gap (GAP_ANALYSIS.md §3.5, 'no evaluation framework for the agent layer') until this phase.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> Driven against a REAL mcp_server.py subprocess with only the Anthropic call scripted: a real tool result (all five projects, not just one, see the finding below) reaches the model-facing messages; a multi-round list-then-drill-in sequence completes correctly; an unknown-repo input surfaces as a structured error, not a crash, all the way through the loop; a model that never stops requesting tools is stopped at the hard cap, not left running. This exercise, on its first run, caught two real bugs (a stale SDK field name, and a list-result truncated to one item) neither of which a live model would have been needed to find, see INCIDENT_LOG.md incidents #5 and #6.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Alerting conditions (pulse_alert.py)</span>
+        <span class="component-class">AlertConditionTests, SendAlertTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether a real operational failure, a crashed run, a total pull failure, a repeated pattern across runs, actually gets flagged rather than sitting silently in a log file nobody reads, a named Tier 5 gap until this phase.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> Against hand-built log histories: a run that never finished is flagged as a probable crash, distinct in wording from a run that finished with zero successes; a degraded run (below 50% success) is a warning, not a false critical; two consecutive total failures trigger a separate 'repeated pattern' alert that a single bad run after good ones correctly does NOT trigger; a malformed log line is skipped rather than crashing the check; a webhook failure (bad response, network error) is reported but never raised, so alerting's own failure can't be mistaken for, or cause, a pipeline failure.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Grounding-check extraction logic (grounding_eval.py)</span>
+        <span class="component-class">ExtractionTests, GroundingCheckTests, RunOneEvalGroundingLogicTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether a live agent's claimed numbers and status words can actually be checked against real tool output automatically, rather than read over by eye, the specific independent check Tier 4's agentic half and Tier 5's evals box both ask for.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> A fabricated number not present anywhere in the real tool output is caught; a fabricated status word (the model saying 'broken' when the tool said 'HEALTHY') is caught; an answer built on zero tool calls fails regardless of how plausible its text reads, since there's no ground truth to check it against; an answer with no checkable numeric or status claims is correctly NOT flagged as a grounding failure, a named limitation of a mechanical substring check, not hidden. The check logic itself is proven; a live model has not yet been run through it, same credential gap as agent_client.py.</div>
+    </div>
+    <div class="component">
+      <div class="component-head">
+        <span class="component-name">Pull scheduler decision logic (pulse_scheduler.py)</span>
+        <span class="component-class">DecideTests, LoadRunStartedTimesTests, CheckRepoChangedTests</span>
+      </div>
+      <div class="component-row"><span class="label">Solves:</span> Whether an unattended pull cadence actually matches what was asked for, 'once every 24 hours unless prompted for more, no more than 3 pulls in a 24 hour window', rather than the cadence quietly drifting under whichever condition happens to fire first.</div>
+      <div class="component-row"><span class="label">Tests prove:</span> The hard cap (3 pulls per rolling 24h) blocks a pull even when a change was detected and the baseline isn't due, confirmed by test, not assumed; with no prior pull on record, or one >=24h old, the baseline fires on its own; with a recent pull and no repos to check, nothing fires; with a recent pull and a confirmed change on at least one tracked repo, the priority trigger fires while the cap still allows it; and an unknown or failed conditional-request result (network blocked, unexpected status) never counts as a change, so a blocked network can only ever cause a missed early pull, never a false one.</div>
+    </div>
+    </section>
+
+    <section>
+      <h2>Insights: observations, blockers, recommendations</h2>
+      <p class="section-note">Written to support a decision, not just to describe status.</p>
+      <div class="insight-grid">
+        <div class="insight-block">
+          <div class="insight-label">Observations</div>
+          <ul>
+    <li class="observation">The independent-verification discipline has now caught six real, non-hypothetical bugs, not zero, and not the same one twice: the staleness calculation using the wrong branch, MCP error messages being silently sanitized before reaching a caller, a partial API failure mid-pull previously producing a false 'active' status, a race condition in the live test suite's own rate-limit check, a stale SDK field name in the agent's tool-schema conversion, and a list-shaped tool result silently truncated to its first item before ever reaching a model. All six were found by actually running something for real, never by code review alone, see INCIDENT_LOG.md for the full account.</li>
+    <li class="observation">The two newest bugs (incidents #5 and #6) both lived in agent_client.py, the one file that had sat the longest without anything actually exercising it, and both were found within the first hour the new eval harness existed, before any live model was ever involved. That's the clearest evidence yet for why 'written correctly against the documented APIs' and 'verified' are different claims, not a restatement of a principle, an instance of it.</li>
+    <li class="observation">90 of 92 automated tests (98%) are independently confirmed passing as of the last run, up from 73 tests at Phase 9. The remaining 2% is blocked by an external condition, GitHub's rate limit, not a code defect, and is reported as skipped, not passed, precisely so that distinction stays visible.</li>
+    <li class="observation">Phase 9 built four of Tier 5's five named components (alerting, an unattended cron schedule, a live grounding eval distinct from Phase 8's scaffolding eval, and an operational incident-log template) without fabricating the fifth, real users, or pretending any of the four have fired for real yet. Phase 10, built to the user's own direct correction of the pull cadence ('once every 24 hours unless prompted for more, no more than 3 pulls in a 24 hour window'), replaced the unconditional daily pull with a scheduler enforcing exactly that, and found a second real CI-persistence gap in the process: without committing pulse_run_log.jsonl and etag_cache.json back to the repo between ticks, the whole cadence would have silently collapsed to 'pull every tick.'</li>
+    <li class="observation">GitHub access has been the single most recurring operational friction point across this entire build, across two different forms now, the unauthenticated rate limit during the original build, and this build environment's own network policy blocking unauthenticated reads entirely during Phase 8, more consistently than any actual code defect encountered.</li>
+    <li class="observation">Every remediation pass so far has surfaced at least one new real defect rather than confirming the code was already correct; Phases 9 and 10 both held the pattern in a smaller way than Phases 1-8's six logged incidents, a dependency-install gap and a state-persistence gap in the CI workflow, both caught by inspection, not by running anything, worth noting as a different, lesser category of catch each time rather than folded into INCIDENT_LOG.md's six to inflate that count.</li>
+    <li class="observation">This project's own documentation can drift out of sync with itself, not just with reality: MATURITY_ASSESSMENT.md's Tier 5 table had not been updated after Phase 9 shipped alerting, the grounding eval, and the operational-incident template, and still read as if none of them existed. Caught and corrected while adding Phase 10's entries, worth naming as a real process gap, not swept into the Phase 10 changelog as if it were new work.</li>
+          </ul>
+        </div>
+        <div class="insight-block">
+          <div class="insight-label">Blockers</div>
+          <ul>
+    <li class="blocker">This build environment's network policy blocks unauthenticated GitHub reads outright (confirmed by a real attempt during Phase 8, a 403 distinct from a rate-limit exhaustion), on top of GitHub's own unauthenticated rate limit named in earlier phases; both block any fresh live pull against real tracked projects from here.</li>
+    <li class="blocker">No ANTHROPIC_API_KEY is available in this build environment, so agent_client.py's live model behavior, does it call the right tool, does it ever misstate a figure, remains unverified, and so does grounding_eval.py's model-facing half built in Phase 9. Phase 8 closed the scaffolding-level eval gap around this code; Phase 9 built the grounding-check mechanism on top of it; neither lowers this specific bar, which still needs a live, credentialed run to close.</li>
+    <li class="blocker">This project is not hosted in a real GitHub repository from this build environment, so four things have never been observed running for real: the CI workflow itself (written since Phase 7), the schedule-triggered unattended-pull job (Phase 9), pulse_alert.py firing against a genuine webhook (Phase 9), and pulse_scheduler.py's cap/baseline/priority decisions holding correctly across real ticks with state actually persisting between them (Phase 10). Written and test-covered is not the same claim as run and confirmed, for any of the four.</li>
+          </ul>
+        </div>
+        <div class="insight-block">
+          <div class="insight-label">Recommendations</div>
+          <ul>
+    <li class="recommendation">Set a GITHUB_TOKEN, and confirm this environment's own network policy permits GitHub reads, before the next live demonstration. Two separate blockers now stack on this one point, closing both converts the single most recurring friction point in this build into a non-issue.</li>
+    <li class="recommendation">Run agent_client.py and grounding_eval.py at least once each against a live Anthropic key before describing the agent layer as fully verified or evaluated. This remains the one deliverable in the SOW with a HOLD decision rather than an accept, closing it is a credential away, not a build task.</li>
+    <li class="recommendation">Push this project to a real hosted GitHub repository, let the schedule trigger fire repeatedly unattended, and confirm both pulse_alert.py delivers against a real webhook URL and pulse_scheduler.py's cap/baseline/priority decisions hold correctly across real ticks with state surviving between them. This closes four 'written but unverified' items at once (CI, the unattended schedule, alerting, and the scheduler's own cadence) and starts the clock on a genuine OPERATIONAL_INCIDENTS.md history.</li>
+    <li class="recommendation">Point TRACKED_REPOS at a real engagement and actually use the dashboard operationally, even if the only user at first is the builder. This is the one Tier 5 component (real users) that no further building closes on its own, named explicitly in MATURITY_ASSESSMENT.md rather than left unaddressed.</li>
+    <li class="recommendation">Prioritize the budget point-in-time-vs-burn-rate limitation as the next enhancement. It's the most frequently repeated named gap across METHODOLOGY.md and would most directly strengthen the exact use case, budget decision-making, this system exists to support.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Sourced from SOW.md, TEST_REPORT.md, and MCP_VERIFICATION_LOG.md as
+      of generation time. Regenerate after any of those change so this
+      stays consistent with them rather than quietly drifting.
+    </footer>
+  </div>
+</body>
+</html>

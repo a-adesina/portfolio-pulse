@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Pulse</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #14171C; --surface: #1B1F26; --border: #262B34;
+    --text: #E7E4DE; --text-muted: #8B909B; --accent: #4FB8AE;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 24px; background: var(--bg); color: var(--text);
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 920px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 6px; }
+  h1 { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: 26px; letter-spacing: -0.01em; margin: 0; }
+  .generated { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+  .tagline { color: var(--text-muted); font-size: 14px; margin: 0 0 24px 0; max-width: 68ch; }
+
+  .headline {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+    padding: 18px 20px; margin-bottom: 24px; font-size: 14.5px; line-height: 1.6;
+  }
+  .headline-label { font-family: 'Space Grotesk', sans-serif; font-size: 12px; letter-spacing: 0.02em; color: var(--accent); margin-bottom: 8px; }
+
+  .summary { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 13.5px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .stat { display: inline-flex; align-items: center; white-space: nowrap; margin-right: 24px; }
+  .stat:last-child { margin-right: 0; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); margin-bottom: 32px; }
+  thead th { text-align: left; font-weight: 500; font-size: 12.5px; color: var(--text-muted); padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  thead th.num { text-align: right; }
+  tbody tr { border-left: 3px solid transparent; border-bottom: 1px solid var(--border); transition: background 0.12s ease; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 12px 14px; font-size: 14px; }
+  td.repo { font-weight: 500; }
+  td.num { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; font-size: 13px; }
+  .pill { font-size: 13px; font-weight: 500; }
+
+  .positions-label { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+  .position { background: var(--surface); border-left: 3px solid transparent; border-radius: 0 4px 4px 0; padding: 12px 16px; margin-bottom: 10px; }
+  .position-repo { font-weight: 500; font-size: 13.5px; margin-bottom: 4px; }
+  .position-text { font-size: 13.5px; color: var(--text-muted); line-height: 1.55; }
+
+  footer { margin-top: 24px; font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+
+  @media (max-width: 640px) {
+    body { padding: 28px 16px; }
+    table { font-size: 13px; }
+    td, thead th { padding: 9px 8px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Portfolio Pulse</h1>
+      <div class="generated">generated 2026-09-25 12:23 UTC</div>
+    </header>
+    <p class="tagline">Delivery, CI, ticket, and budget signal pulled directly from source, not collected through status updates. Data below is a schema-accurate test fixture used to verify the render, not a full live pull, see README.</p>
+
+    <div class="headline">
+      <div class="headline-label">Portfolio position</div>
+      Of 5 tracked projects, 3 are active and 2 have gone stale. 1 project(s) are currently failing CI checks and need immediate attention. 1 project(s) have no CI configured, commit activity is visible but pass/fail status isn't. Ticket backlog is growing portfolio-wide, 33 opened against 23 closed this cycle. Aggregate spend is under plan by $29,800. 4 project(s) require attention this cycle: github/gitignore, octocat/Hello-World, pallets/flask, psf/requests.
+    </div>
+
+    <div class="summary"><span class="stat"><span class="dot" style="background:#C1554A"></span>2 critical</span><span class="stat"><span class="dot" style="background:#D9A441"></span>2 need a look</span><span class="stat"><span class="dot" style="background:#6FAE8C"></span>1 clear</span></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Code health</th>
+          <th class="num">Last commit</th>
+          <th class="num">Tickets (30d)</th>
+          <th>Budget</th>
+          <th class="num">Spend vs. plan</th>
+        </tr>
+      </thead>
+      <tbody>
+    <tr style="border-left-color:#D9A441">
+      <td class="repo">github/gitignore</td>
+      <td><span class="pill" style="color:#4FB8AE">active (unmonitored)</span></td>
+      <td class="num">11d ago</td>
+      <td class="num">14↑ / 3↓</td>
+      <td>on track</td>
+      <td class="num">$-10,800</td>
+    </tr>
+
+    <tr style="border-left-color:#C1554A">
+      <td class="repo">octocat/Hello-World</td>
+      <td><span class="pill" style="color:#D9A441">stale</span></td>
+      <td class="num">5313d ago</td>
+      <td class="num">0↑ / 0↓</td>
+      <td>OVER</td>
+      <td class="num">+$500</td>
+    </tr>
+
+    <tr style="border-left-color:#C1554A">
+      <td class="repo">pallets/flask</td>
+      <td><span class="pill" style="color:#C1554A">broken</span></td>
+      <td class="num">15d ago</td>
+      <td class="num">6↑ / 5↓</td>
+      <td>OVER</td>
+      <td class="num">+$1,500</td>
+    </tr>
+
+    <tr style="border-left-color:#D9A441">
+      <td class="repo">psf/requests</td>
+      <td><span class="pill" style="color:#D9A441">stale</span></td>
+      <td class="num">52d ago</td>
+      <td class="num">1↑ / 1↓</td>
+      <td>on track</td>
+      <td class="num">$-7,000</td>
+    </tr>
+
+    <tr style="border-left-color:#6FAE8C">
+      <td class="repo">tiangolo/fastapi</td>
+      <td><span class="pill" style="color:#6FAE8C">healthy</span></td>
+      <td class="num">4d ago</td>
+      <td class="num">12↑ / 14↓</td>
+      <td>on track</td>
+      <td class="num">$-14,000</td>
+    </tr>
+      </tbody>
+    </table>
+
+    <div class="positions-label">Project positions</div>
+    
+    <div class="position" style="border-left-color:#D9A441">
+      <div class="position-repo">github/gitignore</div>
+      <div class="position-text">github/gitignore is actively shipping, 3 PR(s) merged in the last 30 days. No CI is configured, so pass/fail status can't be verified automatically, only commit activity is visible. The ticket backlog grew this cycle, 14 opened against 3 closed (90 open in total). Spend is on track against plan. Position: worth a closer look this cycle.</div>
+    </div>
+
+    <div class="position" style="border-left-color:#C1554A">
+      <div class="position-repo">octocat/Hello-World</div>
+      <div class="position-text">octocat/Hello-World has gone quiet, 5313 days since the last commit on master. No CI is configured, so pass/fail status can't be verified automatically, only commit activity is visible. No ticket activity this cycle (3 open in total). Spend is over plan by $500. Position: needs immediate attention, spend over plan.</div>
+    </div>
+
+    <div class="position" style="border-left-color:#C1554A">
+      <div class="position-repo">pallets/flask</div>
+      <div class="position-text">pallets/flask is actively shipping, 6 PR(s) merged in the last 30 days. The latest commit is currently failing its checks, this needs confirming before treating the project as healthy. The ticket backlog grew this cycle, 6 opened against 5 closed (45 open in total). Spend is over plan by $1,500. Position: needs immediate attention, a failing build.</div>
+    </div>
+
+    <div class="position" style="border-left-color:#D9A441">
+      <div class="position-repo">psf/requests</div>
+      <div class="position-text">psf/requests has gone quiet, 52 days since the last commit on main. No CI is configured, so pass/fail status can't be verified automatically, only commit activity is visible. Ticket flow was balanced this cycle, 1 opened and 1 closed (28 open in total). Spend is on track against plan. Position: worth a closer look this cycle.</div>
+    </div>
+
+    <div class="position" style="border-left-color:#6FAE8C">
+      <div class="position-repo">tiangolo/fastapi</div>
+      <div class="position-text">tiangolo/fastapi is actively shipping, 9 PR(s) merged in the last 30 days. The latest commit passed its checks. The ticket backlog shrank this cycle, 14 closed against 12 opened (82 open in total). Spend is on track against plan. Position: no action needed.</div>
+    </div>
+
+    <footer>
+      Delivery, CI, and ticket data pulled live from GitHub's API. Budget data is representative, see methodology.
+      Regenerated fresh on every pipeline run, this file is a snapshot, not a live feed. Full parameter definitions and interpretation logic in METHODOLOGY.md.
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,191 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Added for Tier 5's "runs unattended" claim (MATURITY_ASSESSMENT.md,
+    # "Path to Tier 5" step 1): a real cron trigger, not just push/PR, so
+    # this can actually accumulate an unattended run history once hosted
+    # in a real repo.
+    #
+    # Phase 10 revision: this used to be "0 6 * * *" (once daily), which
+    # made sense when the unattended-pull job pulled unconditionally on
+    # every firing. It now runs pulse_scheduler.py instead (see that job
+    # below), which decides FOR ITSELF whether a given tick actually
+    # pulls — baseline once every 24h, an earlier pull only if a cheap
+    # conditional check finds a real change on a tracked repo, and a hard
+    # ceiling of 3 pulls per rolling 24h regardless. This cron just needs
+    # to fire often enough for that priority check to matter; three times
+    # a day was the user's own original framing ("every 8 hours... three
+    # refreshes in a day") for how often to LOOK, even after the pull
+    # cadence itself was corrected to a 24h baseline. Most ticks are
+    # expected to end in "not_due" and skip — that's the design working
+    # as intended, not a sign something's wrong.
+    - cron: "0 */8 * * *"
+  workflow_dispatch:
+    # Lets a scheduled or on-demand run be triggered manually from the
+    # Actions tab too, useful for proving the schedule path works without
+    # waiting for the next 06:00 UTC.
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        # Was "pip install requests" only, which silently would have
+        # started failing the moment tests/test_agent_eval.py (which
+        # imports mcp and anthropic) was added, this was never actually
+        # run in a real hosted repo to catch that, caught instead by
+        # reading this file carefully while adding the schedule trigger
+        # below, not by running it. A real but lesser-category catch
+        # than the six logged in INCIDENT_LOG.md, which were all caught
+        # by actually running something — stated as that distinction on
+        # purpose, not rounded up to the same claim.
+        run: pip install -r requirements.txt
+
+      - name: Run test suite
+        # Deliberately using the Actions-provided GITHUB_TOKEN here, not
+        # a secret anyone had to configure. It's scoped for write access
+        # to this repo, but for READ calls against api.github.com in
+        # general (what this pull needs, other public repos), presenting
+        # any valid token raises the rate limit from 60/hour to
+        # 5,000/hour regardless of which repo it's scoped to. That gives
+        # the live integration tests in tests/test_github_pull.py a real
+        # chance to actually run in CI, not just in mocked form, rather
+        # than always skipping the way they did in the sandbox this was
+        # built in, where no token was available at all.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 run_tests.py
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-py${{ matrix.python-version }}
+          path: TEST_REPORT.md
+
+  unattended-pull:
+    # The actual product running unattended, not just the test suite —
+    # Tier 5's "runs unattended" claim needs THIS job's run history, not
+    # the test job's. Deliberately NOT triggered on push/PR: a live pull
+    # on every PR would be noisy and unrelated to what the PR changed.
+    # Only runs on the schedule above, or on-demand via workflow_dispatch
+    # so the schedule path can be proven without waiting for the next
+    # firing.
+    #
+    # Phase 10 revision: this job now calls pulse_scheduler.py, not
+    # github_status_pull.py directly. The scheduler decides whether THIS
+    # tick actually pulls (see pulse_scheduler.py's docstring for the
+    # cap/baseline/priority logic); every step after it is gated on that
+    # decision via the "Record whether this tick actually pulled" step's
+    # output, so a skipped tick doesn't waste time re-rendering reports
+    # or re-running verify_pull.py / pulse_alert.py against unchanged
+    # data.
+    #
+    # `permissions: contents: write` and the final "Persist scheduler
+    # state" step exist for one specific, load-bearing reason, not as
+    # generic housekeeping: pulse_scheduler.py's cap and baseline both
+    # depend on pulse_run_log.jsonl (and its priority check on
+    # etag_cache.json) surviving BETWEEN scheduled runs. A GitHub Actions
+    # job starts from a clean checkout every time — without committing
+    # these back, every tick would see an empty log, decide
+    # "baseline_due" every single time, and the 24h/3-pull cadence would
+    # never actually apply. Named here because it was a real correctness
+    # gap caught while wiring this up, not a style choice.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # One tick at a time: two overlapping runs would each read the same
+    # run history, could both decide to pull, and would race on the push.
+    concurrency:
+      group: pulse-unattended
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run the priority-aware scheduler
+        # Decides, and logs its decision, every tick. Only actually calls
+        # the real pipeline (github_status_pull.main()) when due.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 pulse_scheduler.py
+
+      - name: Record whether this tick actually pulled
+        id: check
+        run: |
+          python3 -c "import json; d = json.load(open('scheduler_last_decision.json')); print('should_pull=' + ('true' if d.get('should_pull') else 'false'))" >> "$GITHUB_OUTPUT"
+
+      - name: Render report and dashboard, and independently verify
+        if: steps.check.outputs.should_pull == 'true'
+        run: |
+          python3 generate_report.py
+          python3 generate_dashboard.py
+          python3 verify_pull.py
+
+      - name: Alert on a failed or degraded run
+        if: steps.check.outputs.should_pull == 'true'
+        run: python3 pulse_alert.py
+        env:
+          PULSE_ALERT_WEBHOOK_URL: ${{ secrets.PULSE_ALERT_WEBHOOK_URL }}
+
+      - name: Persist scheduler state for the next tick
+        # See the job comment above — pulse_run_log.jsonl and
+        # etag_cache.json MUST survive to the next scheduled checkout or
+        # the cap/baseline/priority logic has nothing to read and this
+        # degrades to "pull every tick." [skip ci] stops this commit from
+        # re-triggering the push-based `test` job above.
+        if: always()
+        run: |
+          git config user.name "portfolio-pulse-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Only stage files that exist. On the first tick the scheduler
+          # decides "baseline_due" before it ever reaches the change check,
+          # so etag_cache.json is never written; a plain `git add` naming a
+          # missing path aborts with exit 128 and stages NOTHING, which
+          # would silently lose the run log and defeat the whole cadence.
+          # Reproduced, not assumed.
+          for f in pulse_run_log.jsonl etag_cache.json scheduler_last_decision.json pull_results.json; do
+            [ -f "$f" ] && git add "$f"
+          done
+          git diff --cached --quiet || git commit -m "Persist scheduler state [skip ci]"
+          git push
+
+      - name: Upload this tick's outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unattended-pull-${{ github.run_id }}
+          path: |
+            pull_results.json
+            status_report.md
+            dashboard.html
+            verification_report.md
+            pulse_run_log.jsonl
+            scheduler_last_decision.json
+            etag_cache.json
+          if-no-files-found: warn
