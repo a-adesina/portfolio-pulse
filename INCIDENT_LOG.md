@@ -162,6 +162,40 @@ incident #6") without renumbering later.
 
 ---
 
+## Addendum: found by the first hosted CI run (a test-suite defect, not counted in the six)
+
+Kept apart from the six above on purpose. Those are defects in the
+product's own code. This one is a defect in the test suite, and folding
+it into that count would blur what the six claim.
+
+- **Found:** the first push to a real GitHub repository. The `Tests`
+  workflow failed on all three Python versions (3.10, 3.11, 3.12) with
+  the same single failure; the other 91 tests passed on each.
+- **What was wrong:** `test_live_repo_with_no_ci_configured` asserted that
+  `octocat/Hello-World` has no CI, so `ci_status` should be
+  `no_ci_configured`. The runner got `success`. That claim was about a
+  third-party repo this project does not control, and nothing pinned it:
+  in this build's recorded runs the live tests that need a result were
+  skipped (a rate limit, then this sandbox's network policy), so the
+  assertion was not being exercised. The product code behaved correctly, since `get_ci_status` reports any
+  check run or commit status GitHub returns for the latest commit.
+- **Fix:** replaced it with `test_live_repo_returns_a_valid_ci_status`,
+  which asserts the real response falls inside the documented status
+  vocabulary. The specific "no CI configured" outcome stays covered by
+  the mocked tests, where the inputs are controlled.
+- **Why it's worth recording:** the live tier was designed to check "the
+  mocked assumptions match reality." This is that tier doing its job. It
+  also shows the cost of a test that skips whenever its precondition
+  isn't met: the suite reported green while one of its three live
+  assertions was wrong.
+- **Also learned, same run:** the other two live tests
+  (`test_live_dormant_repo_is_stale`,
+  `test_live_nonexistent_repo_returns_none`) executed on the runner and
+  passed. This was the first run recorded in this project in which all
+  three live tests executed with none skipped.
+
+---
+
 ## What this log is, and isn't
 
 Six real defects across this build, zero of them hypothetical, all six
