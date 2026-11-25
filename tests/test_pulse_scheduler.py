@@ -184,11 +184,42 @@ class CheckRepoChangedTests(unittest.TestCase):
         result = pulse_scheduler.check_repo_changed("a/b", {}, get_fn=lambda repo, etag: (304, None))
         self.assertFalse(result)
 
-    def test_200_is_changed_and_updates_cache(self):
-        cache = {}
+    def test_200_against_a_prior_etag_is_changed_and_updates_cache(self):
+        cache = {"commits:a/b": "old-etag"}
         result = pulse_scheduler.check_repo_changed("a/b", cache, get_fn=lambda repo, etag: (200, "abc123"))
         self.assertTrue(result)
-        self.assertEqual(cache["a/b"], "abc123")
+        self.assertEqual(cache["commits:a/b"], "abc123")
+
+    def test_first_observation_records_etag_and_is_not_a_change(self):
+        # With no saved ETag GitHub must answer 200 whether or not anything
+        # changed, so that answer carries no information about change.
+        cache = {}
+        result = pulse_scheduler.check_repo_changed("a/b", cache, get_fn=lambda repo, etag: (200, "abc123"))
+        self.assertFalse(result)
+        self.assertEqual(cache["commits:a/b"], "abc123")
+
+    def test_second_check_after_first_observation_detects_a_real_change(self):
+        cache = {}
+        pulse_scheduler.check_repo_changed("a/b", cache, get_fn=lambda repo, etag: (200, "v1"))
+        result = pulse_scheduler.check_repo_changed("a/b", cache, get_fn=lambda repo, etag: (200, "v2"))
+        self.assertTrue(result)
+        self.assertEqual(cache["commits:a/b"], "v2")
+
+    def test_etag_saved_under_the_old_repo_record_scheme_is_ignored(self):
+        # An ETag stored under the bare repo name belonged to the old
+        # resource. It must never be sent as If-None-Match for the commit
+        # list; a repo with only that legacy entry counts as a first
+        # observation, not a change.
+        seen = {}
+
+        def fake_get(repo, etag):
+            seen["etag"] = etag
+            return 200, "fresh"
+
+        cache = {"a/b": "legacy-repo-record-etag"}
+        result = pulse_scheduler.check_repo_changed("a/b", cache, get_fn=fake_get)
+        self.assertIsNone(seen["etag"])
+        self.assertFalse(result)
 
     def test_failed_request_is_unknown_not_changed(self):
         result = pulse_scheduler.check_repo_changed("a/b", {}, get_fn=lambda repo, etag: (None, None))
@@ -199,7 +230,7 @@ class CheckRepoChangedTests(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_prior_etag_is_passed_through_to_get_fn(self):
-        cache = {"a/b": "prior-etag"}
+        cache = {"commits:a/b": "prior-etag"}
         seen = {}
 
         def fake_get(repo, etag):

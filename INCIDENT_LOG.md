@@ -162,11 +162,15 @@ incident #6") without renumbering later.
 
 ---
 
-## Addendum: found by the first hosted CI run (a test-suite defect, not counted in the six)
+## Addendum: found by the first hosted runs (not renumbered into the six)
 
-Kept apart from the six above on purpose. Those are defects in the
-product's own code. This one is a defect in the test suite, and folding
-it into that count would blur what the six claim.
+Kept apart from the six above on purpose, and not renumbered, because
+the "six" is quoted across other documents; the counts get reconciled in
+one pass once a full day of hosted runs is in. Part A is a test-suite
+defect. Parts B and C are defects in `pulse_scheduler.py`, the same kind
+as the six.
+
+### A. The live CI test (test-suite defect)
 
 - **Found:** the first push to a real GitHub repository. The `Tests`
   workflow failed on all three Python versions (3.10, 3.11, 3.12) with
@@ -193,6 +197,48 @@ it into that count would blur what the six claim.
   `test_live_nonexistent_repo_returns_none`) executed on the runner and
   passed. This was the first run recorded in this project in which all
   three live tests executed with none skipped.
+
+### B. A first observation read as a change (scheduler defect, observed live)
+
+- **Found:** two manual runs of the hosted `unattended-pull` job, four
+  minutes apart. Run #3 (checked at 16:02:31Z) decided `baseline_due` and
+  pulled 5/5 repos. Run #4 (16:06:28Z) decided
+  `priority_change_detected`, listing **all five** tracked repos as
+  changed, with the detail "only 0.1h since the last pull". Five repos
+  cannot all change in four minutes.
+- **What was wrong:** with no saved ETag, GitHub has nothing to compare
+  against and must answer 200 whether or not anything changed.
+  `check_repo_changed` returned True for that 200, so the first check of
+  every repo always read as a change and triggered an extra pull right
+  after the baseline pull.
+- **Fix:** a first observation now records the ETag and returns False; a
+  change can only be reported against a prior ETag. Regression tests:
+  `test_first_observation_records_etag_and_is_not_a_change` and
+  `test_second_check_after_first_observation_detects_a_real_change`.
+- **What the same run proved:** run #4 read run #3's saved log
+  (`pulls_in_last_24h: 1`, `last_pull_at: 2026-11-25T16:02:31Z`), so
+  state persisting between separate hosted runs works as designed.
+- **Cost of the bug:** one extra pull, within the cap of 3 per 24h. Two
+  pulls are on record for 2026-11-25.
+
+### C. The watched resource was too noisy (scheduler design flaw, reasoned, not observed)
+
+- **Found:** by rereading the check after run #4, not by watching it fail.
+- **What was wrong:** the change check watched the plain repo record
+  (`GET /repos/{owner}/{repo}`), whose ETag flips on star counts, issue
+  counts and descriptions as well as code. On busy repos that is many
+  times a day, so priority pulls would have fired on nearly every tick up
+  to the cap of 3 a day, against a requested cadence of 1 a day unless the
+  author updates the code. The earlier "safe by construction" wording
+  covered correctness (a false positive never produces a wrong answer) and
+  missed that it defeated the cadence.
+- **Fix:** watch `GET /repos/{owner}/{repo}/commits?per_page=1` instead
+  (the default branch's commit list), and prefix cache keys with
+  `commits:` so ETags saved under the old scheme are never compared
+  against the new resource.
+- **Not yet verified live:** that GitHub answers 304 on that endpoint
+  when nothing has changed. The per-tick decision log records which repos
+  were seen as changed, so the first quiet ticks will show it.
 
 ---
 

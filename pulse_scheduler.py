@@ -53,19 +53,24 @@ repo to actually prove" limitation already in SOW.md and README.md. It
 has not been observed running end-to-end in a real hosted repo (same
 stated boundary as the rest of the unattended-pull job).
 
-A second limitation, same honesty standard as METHODOLOGY.md's pushed_at
-fix: the conditional check here hits the plain repo resource
-(`GET /repos/{owner}/{repo}`), not the default-branch-scoped commit
-endpoint `github_status_pull.py` uses for the real staleness number. That
-makes it the SAME kind of imprecise signal `pushed_at` was (any branch
-moving, or any repo metadata field changing, can flip the ETag) — but
-unlike that earlier bug, the imprecision here is safe by construction:
-this check is only ever allowed to CAUSE an extra pull inside the cap,
-never to suppress a due pull or report a status itself. A false-positive
-"changed" here costs one extra, correctly-capped pull; it can never
-produce a wrong answer, which is the failure mode the pushed_at bug
-actually had. Worth stating the difference explicitly rather than letting
-the surface similarity read as the same mistake twice.
+Which resource the change check watches, and why it changed after the
+first hosted runs: the first version hit the plain repo record
+(`GET /repos/{owner}/{repo}`). That record's ETag flips on ANY metadata
+change, including star counts, issue counts and descriptions, which move
+many times a day on busy repos like fastapi and flask. Wrongly firing an
+early pull is cheap and cap-limited, so it was "safe" for correctness, but
+it would have defeated the requested cadence: a priority pull on nearly
+every tick, up to the cap of 3 a day instead of the intended 1. The check
+now watches `GET /repos/{owner}/{repo}/commits?per_page=1`, which with no
+branch given is the default branch's commit list, so its ETag changes only
+when a commit lands there: the requested "the author updated the code"
+signal. Cache keys carry a `commits:` prefix so ETags saved under the old
+repo-record scheme can never be compared against the new resource.
+Not yet verified live: that GitHub answers 304 on this endpoint when
+nothing has changed. The decision log (`scheduler_last_decision.json`
+and the `scheduler_decision` events) records which repos were seen as
+changed on every tick, so the first quiet ticks will show whether it
+behaves as intended.
 
 Usage:
     python3 pulse_scheduler.py
@@ -160,7 +165,8 @@ def _conditional_get(owner_repo, etag):
         headers["If-None-Match"] = etag
     try:
         resp = requests.get(
-            f"{github_status_pull.API_BASE}/repos/{owner_repo}",
+            f"{github_status_pull.API_BASE}/repos/{owner_repo}/commits",
+            params={"per_page": 1},
             headers=headers, timeout=10,
         )
     except requests.exceptions.RequestException as e:
@@ -172,18 +178,31 @@ def _conditional_get(owner_repo, etag):
 
 
 def check_repo_changed(owner_repo, etag_cache, get_fn=None):
-    """Returns True (changed), False (confirmed unchanged, a real 304), or
-    None (unknown — request failed, or returned something other than
-    200/304). `get_fn` is injectable so tests never touch the network."""
+    """Returns True (changed), False (confirmed unchanged, or a first
+    observation with nothing to compare against), or None (unknown —
+    request failed, or returned something other than 200/304). `get_fn`
+    is injectable so tests never touch the network.
+
+    First-observation rule, added after reading this function against how
+    the first hosted run actually behaved: with no saved ETag there is
+    nothing to compare to, so GitHub must answer 200 ("here is the data"),
+    which says nothing about whether the repo changed. An earlier version
+    returned True for that case, so the first check of every repo always
+    looked like a change and could trigger an extra pull right after a
+    baseline pull. Now a first observation only RECORDS the ETag and
+    returns False; a change can only be reported against a prior ETag."""
     if get_fn is None:
         get_fn = _conditional_get
-    prior_etag = etag_cache.get(owner_repo)
+    cache_key = f"commits:{owner_repo}"
+    prior_etag = etag_cache.get(cache_key)
     status, new_etag = get_fn(owner_repo, prior_etag)
     if status == 304:
         return False
     if status == 200:
         if new_etag:
-            etag_cache[owner_repo] = new_etag
+            etag_cache[cache_key] = new_etag
+        if prior_etag is None:
+            return False
         return True
     return None
 
