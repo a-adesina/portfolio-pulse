@@ -1,0 +1,67 @@
+[
+  {
+    "repo": "tiangolo/fastapi",
+    "default_branch": "master",
+    "last_commit_date": "2026-11-18T19:13:45Z",
+    "days_since_last_commit": 6,
+    "stale": false,
+    "ci_status": "failure",
+    "open_issues": 1,
+    "tickets_opened_recent": 1,
+    "tickets_closed_recent": 1,
+    "prs_merged_last_30d": 17,
+    "open_issues_total_field_includes_prs": 47
+  },
+  {
+    "repo": "pallets/flask",
+    "default_branch": "main",
+    "last_commit_date": "2026-10-30T15:05:20Z",
+    "days_since_last_commit": 26,
+    "stale": true,
+    "ci_status": "success",
+    "open_issues": 1,
+    "tickets_opened_recent": 13,
+    "tickets_closed_recent": 13,
+    "prs_merged_last_30d": 1,
+    "open_issues_total_field_includes_prs": 4
+  },
+  {
+    "repo": "psf/requests",
+    "default_branch": "main",
+    "last_commit_date": "2026-10-26T17:14:41Z",
+    "days_since_last_commit": 29,
+    "stale": true,
+    "ci_status": "success",
+    "open_issues": 48,
+    "tickets_opened_recent": 13,
+    "tickets_closed_recent": 1,
+    "prs_merged_last_30d": 1,
+    "open_issues_total_field_includes_prs": 257
+  },
+  {
+    "repo": "github/gitignore",
+    "default_branch": "main",
+    "last_commit_date": "2026-11-24T22:37:31Z",
+    "days_since_last_commit": 0,
+    "stale": false,
+    "ci_status": "success",
+    "open_issues": 0,
+    "tickets_opened_recent": 0,
+    "tickets_closed_recent": 0,
+    "prs_merged_last_30d": 19,
+    "open_issues_total_field_includes_prs": 15
+  },
+  {
+    "repo": "octocat/Hello-World",
+    "default_branch": "master",
+    "last_commit_date": "2012-03-06T23:06:50Z",
+    "days_since_last_commit": 5376,
+    "stale": true,
+    "ci_status": "success",
+    "open_issues": 50,
+    "tickets_opened_recent": 48,
+    "tickets_closed_recent": 13,
+    "prs_merged_last_30d": 0,
+    "open_issues_total_field_includes_prs": 7582
+  }
+]

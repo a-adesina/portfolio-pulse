@@ -1,0 +1,9 @@
+{
+  "should_pull": true,
+  "reason": "baseline_due",
+  "checked_at": "2026-11-25T16:02:31Z",
+  "pulls_in_last_24h": 0,
+  "cap": 3,
+  "last_pull_at": null,
+  "reason_detail": "no prior pull on record"
+}

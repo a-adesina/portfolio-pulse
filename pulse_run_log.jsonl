@@ -1,0 +1,8 @@
+{"ts": "2026-11-25T16:02:31Z", "run_id": "a958cbefda80", "event": "scheduler_decision", "repo": null, "should_pull": true, "reason": "baseline_due", "checked_at": "2026-11-25T16:02:31Z", "pulls_in_last_24h": 0, "cap": 3, "last_pull_at": null, "reason_detail": "no prior pull on record"}
+{"ts": "2026-11-25T16:02:31Z", "run_id": "a3326d5e087e", "event": "run_started", "repo": null, "tracked_repo_count": 5}
+{"ts": "2026-11-25T16:02:38Z", "run_id": "a3326d5e087e", "event": "repo_pull_succeeded", "repo": "tiangolo/fastapi", "stale": false, "ci_status": "failure", "days_since_commit": 6, "open_issues": 1}
+{"ts": "2026-11-25T16:02:42Z", "run_id": "a3326d5e087e", "event": "repo_pull_succeeded", "repo": "pallets/flask", "stale": true, "ci_status": "success", "days_since_commit": 26, "open_issues": 1}
+{"ts": "2026-11-25T16:02:46Z", "run_id": "a3326d5e087e", "event": "repo_pull_succeeded", "repo": "psf/requests", "stale": true, "ci_status": "success", "days_since_commit": 29, "open_issues": 48}
+{"ts": "2026-11-25T16:02:51Z", "run_id": "a3326d5e087e", "event": "repo_pull_succeeded", "repo": "github/gitignore", "stale": false, "ci_status": "success", "days_since_commit": 0, "open_issues": 0}
+{"ts": "2026-11-25T16:02:56Z", "run_id": "a3326d5e087e", "event": "repo_pull_succeeded", "repo": "octocat/Hello-World", "stale": true, "ci_status": "success", "days_since_commit": 5376, "open_issues": 50}
+{"ts": "2026-11-25T16:02:56Z", "run_id": "a3326d5e087e", "event": "run_finished", "repo": null, "succeeded": 5, "attempted": 5}
