@@ -167,8 +167,8 @@ incident #6") without renumbering later.
 Kept apart from the six above on purpose, and not renumbered, because
 the "six" is quoted across other documents; the counts get reconciled in
 one pass once a full day of hosted runs is in. Part A is a test-suite
-defect. Parts B and C are defects in `pulse_scheduler.py`, the same kind
-as the six.
+defect. Parts B, C and D are defects in `pulse_scheduler.py`, the same
+kind as the six.
 
 ### A. The live CI test (test-suite defect)
 
@@ -239,6 +239,50 @@ as the six.
 - **Not yet verified live:** that GitHub answers 304 on that endpoint
   when nothing has changed. The per-tick decision log records which repos
   were seen as changed, so the first quiet ticks will show it.
+
+### D. The commit-list ETag changed with no new commit (scheduler defect, observed live)
+
+- **Found:** the first two scheduled ticks of the hosted repo. Tick 1
+  (checked 2026-11-25T23:57Z) decided `not_due`. That was the first
+  observation of the `commits:` keys, so it carried no information about
+  whether GitHub answers 304. Tick 2 (2026-11-26T07:26Z) decided
+  `priority_change_detected` and listed **all five** repos as changed,
+  including `octocat/Hello-World`, a repo the pull itself reports as
+  5,377 days since its last commit. The extra pull was the third in the
+  trailing 24h (16:02Z, 16:06Z, 07:26Z), so the cap of 3 is what stopped
+  any further pulls; the intended cadence of one a day was not met.
+- **Evidence:** the stored ETag for every `commits:` key differs between
+  the persist commits after tick 1 and tick 2 (`etag_cache.json`). The
+  `last_commit_date` recorded by the pulls at 2026-11-25T16:06Z and
+  2026-11-26T07:26Z is identical for all five repos; only the
+  days-since count moved by one.
+- **What was wrong:** the check treated "ETag differs" as "something
+  landed on the default branch". The ETag differed with no change visible
+  in the recorded data.
+- **Cause: not established.** Candidates, all unverified: the ETag varies
+  with the credential (each Actions run uses a different `GITHUB_TOKEN`);
+  the endpoint does not honour the conditional request; some other
+  response detail changes. I could not probe the endpoint from the build
+  sandbox (its proxy returns 403 for api.github.com), so none of these
+  was tested.
+- **Fix:** stop depending on the ETag. Each tick fetches the newest commit
+  and compares its SHA with the SHA saved last tick (`sha:` cache keys;
+  earlier keys ignored, so each repo has one first observation). This
+  removes the unexplained variable rather than explaining it. Regression
+  tests: `test_etag_churn_with_same_commit_is_not_a_change`,
+  `test_change_is_reported_once_then_quiet`,
+  `test_values_saved_under_earlier_schemes_are_ignored`, plus
+  `FetchLatestShaTests` for the HTTP wrapper.
+- **Not yet verified live:** that the SHA version reports "no change" on a
+  quiet tick. Unit tests pin the logic; only a hosted tick shows it holds
+  against GitHub.
+- **What the same ticks proved:** state persisted across separate
+  scheduled runs (tick 2 read tick 1's saved cache), the persist step
+  committed on each tick, and the hard cap was in force with three pulls
+  in the window.
+- **Unreconciled:** the `checked_at` values (23:57Z, 07:26Z) fall before the
+  `0 */8 * * *` slots at 00:00Z and 08:00Z by roughly 3 and 34 minutes.
+  Not explained here.
 
 ---
 

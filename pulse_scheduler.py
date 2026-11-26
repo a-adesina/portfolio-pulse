@@ -40,7 +40,7 @@ What decide() depends on, and a real limitation stated plainly rather
 than glossed over: the cap and baseline calculations read `run_started`
 events out of `pulse_log.LOG_PATH` (the same structured log
 `github_status_pull.py` already writes), and the priority check reads/
-writes `etag_cache.json` next to it. In a GitHub Actions scheduled run,
+writes `etag_cache.json` (latest-commit SHAs; see below) next to it. In a GitHub Actions scheduled run,
 every tick starts from a fresh checkout — neither file survives between
 ticks unless something commits them back to the repo between runs. The
 `.github/workflows/tests.yml` `unattended-pull` job does that explicitly
@@ -53,24 +53,35 @@ repo to actually prove" limitation already in SOW.md and README.md. It
 has not been observed running end-to-end in a real hosted repo (same
 stated boundary as the rest of the unattended-pull job).
 
-Which resource the change check watches, and why it changed after the
-first hosted runs: the first version hit the plain repo record
-(`GET /repos/{owner}/{repo}`). That record's ETag flips on ANY metadata
-change, including star counts, issue counts and descriptions, which move
-many times a day on busy repos like fastapi and flask. Wrongly firing an
-early pull is cheap and cap-limited, so it was "safe" for correctness, but
-it would have defeated the requested cadence: a priority pull on nearly
-every tick, up to the cap of 3 a day instead of the intended 1. The check
-now watches `GET /repos/{owner}/{repo}/commits?per_page=1`, which with no
-branch given is the default branch's commit list, so its ETag changes only
-when a commit lands there: the requested "the author updated the code"
-signal. Cache keys carry a `commits:` prefix so ETags saved under the old
-repo-record scheme can never be compared against the new resource.
-Not yet verified live: that GitHub answers 304 on this endpoint when
-nothing has changed. The decision log (`scheduler_last_decision.json`
-and the `scheduler_decision` events) records which repos were seen as
-changed on every tick, so the first quiet ticks will show whether it
-behaves as intended.
+What the change check compares, and why it changed twice after the first
+hosted runs. Version 1 sent a conditional request (ETag / If-None-Match)
+to the plain repo record. That record changes on any metadata movement
+(stars, issue counts), so it would have fired early pulls on busy repos.
+Version 2 moved to `GET /repos/{owner}/{repo}/commits?per_page=1` (the
+default branch's newest commit), still compared by ETag. Observed on the
+hosted repo: between the pull at 2026-11-25T16:06Z and the pull at
+2026-11-26T07:26Z, the stored ETag changed for all five repos, including
+octocat/Hello-World, while the newest-commit date recorded by the two
+pulls was identical for all five (only the days-since count moved). A
+matching date is strong but not conclusive evidence that no commit
+landed. The ETag therefore changed with, as far as the data shows, no new
+commit. The cause has NOT been established; candidate
+explanations (ETag varying with the per-run GITHUB_TOKEN, or the endpoint
+not honouring the conditional request) are unverified. Version 3, here,
+stops depending on the ETag: each tick fetches the newest commit and
+compares its SHA with the SHA saved on the previous tick. A SHA changes
+only when a commit lands on the default branch. The cost is one small
+unconditional request per repo per tick (per_page=1), which is cheap
+against the authenticated rate limit. Cache keys carry a `sha:` prefix, so
+values saved under earlier schemes are ignored and every repo gets one
+first observation (recorded, never reported as a change). The cache file
+is still named `etag_cache.json`; it now holds commit SHAs, and the name
+was kept so the workflow's persist step did not need to change.
+Not yet observed live with this version: a quiet tick that correctly
+reports "no change" for all five repos. The decision log
+(`scheduler_last_decision.json` and the `scheduler_decision` events)
+records which repos were seen as changed on every tick, so the next
+ticks will show whether it behaves as intended.
 
 Usage:
     python3 pulse_scheduler.py
@@ -153,58 +164,57 @@ def _save_etag_cache(cache, path):
               file=sys.stderr)
 
 
-def _conditional_get(owner_repo, etag):
-    """Returns (status_code_or_None, new_etag_or_None). None status means
-    the request itself failed or was blocked (this sandbox's own outbound
-    network policy, same block already documented for the real pull path)
-    — treated as unknown, never as a change, so a blocked network can only
-    ever cause a missed priority trigger (falls back to the 24h baseline
-    still catching it), never a false pull."""
-    headers = github_status_pull._headers()
-    if etag:
-        headers["If-None-Match"] = etag
+def _fetch_latest_sha(owner_repo):
+    """Returns (status_code_or_None, latest_commit_sha_or_None). None
+    status means the request itself failed or was blocked (this sandbox's
+    own outbound network policy, same block already documented for the
+    real pull path), treated as unknown, never as a change, so a blocked
+    network can only cause a missed priority trigger (the 24h baseline
+    still catches it), never a false pull. A 200 with no commit in the
+    body is also reported as unknown."""
     try:
         resp = requests.get(
             f"{github_status_pull.API_BASE}/repos/{owner_repo}/commits",
             params={"per_page": 1},
-            headers=headers, timeout=10,
+            headers=github_status_pull._headers(), timeout=10,
         )
     except requests.exceptions.RequestException as e:
-        print(f"  ! Conditional change-check for {owner_repo} failed "
+        print(f"  ! Change-check for {owner_repo} failed "
               f"({e.__class__.__name__}), treating as unknown, not as a change.",
               file=sys.stderr)
         return None, None
-    return resp.status_code, resp.headers.get("ETag")
+    if resp.status_code != 200:
+        return resp.status_code, None
+    try:
+        body = resp.json()
+        return 200, body[0]["sha"]
+    except (ValueError, IndexError, KeyError, TypeError):
+        return None, None
 
 
-def check_repo_changed(owner_repo, etag_cache, get_fn=None):
-    """Returns True (changed), False (confirmed unchanged, or a first
-    observation with nothing to compare against), or None (unknown —
-    request failed, or returned something other than 200/304). `get_fn`
-    is injectable so tests never touch the network.
+def check_repo_changed(owner_repo, cache, get_fn=None):
+    """Returns True (the newest commit on the default branch differs from
+    the one saved last tick), False (same commit, or a first observation
+    with nothing to compare against), or None (unknown: request failed or
+    returned no usable commit). `get_fn(owner_repo) -> (status, sha)` is
+    injectable so tests never touch the network.
 
-    First-observation rule, added after reading this function against how
-    the first hosted run actually behaved: with no saved ETag there is
-    nothing to compare to, so GitHub must answer 200 ("here is the data"),
-    which says nothing about whether the repo changed. An earlier version
-    returned True for that case, so the first check of every repo always
-    looked like a change and could trigger an extra pull right after a
-    baseline pull. Now a first observation only RECORDS the ETag and
-    returns False; a change can only be reported against a prior ETag."""
+    First-observation rule: with no saved SHA there is nothing to compare
+    to, so the first check of a repo only RECORDS the SHA and returns
+    False; a change can only be reported against a prior SHA. The saved
+    SHA is updated on every successful check, so each change is reported
+    once."""
     if get_fn is None:
-        get_fn = _conditional_get
-    cache_key = f"commits:{owner_repo}"
-    prior_etag = etag_cache.get(cache_key)
-    status, new_etag = get_fn(owner_repo, prior_etag)
-    if status == 304:
+        get_fn = _fetch_latest_sha
+    cache_key = f"sha:{owner_repo}"
+    prior_sha = cache.get(cache_key)
+    status, sha = get_fn(owner_repo)
+    if status != 200 or not sha:
+        return None
+    cache[cache_key] = sha
+    if prior_sha is None:
         return False
-    if status == 200:
-        if new_etag:
-            etag_cache[cache_key] = new_etag
-        if prior_etag is None:
-            return False
-        return True
-    return None
+    return sha != prior_sha
 
 
 def decide(now=None, log_path=None, repos=None, etag_cache_path=None, change_check_fn=None):

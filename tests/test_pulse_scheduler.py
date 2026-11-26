@@ -16,6 +16,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from datetime import datetime, timezone, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -178,67 +179,98 @@ class LoadRunStartedTimesTests(unittest.TestCase):
 
 
 class CheckRepoChangedTests(unittest.TestCase):
-    """The ETag interpretation logic, with the network call itself stubbed."""
+    """The commit-SHA comparison, with the network call itself stubbed."""
 
-    def test_304_is_not_changed(self):
-        result = pulse_scheduler.check_repo_changed("a/b", {}, get_fn=lambda repo, etag: (304, None))
-        self.assertFalse(result)
+    @staticmethod
+    def _get(status, sha):
+        return lambda repo: (status, sha)
 
-    def test_200_against_a_prior_etag_is_changed_and_updates_cache(self):
-        cache = {"commits:a/b": "old-etag"}
-        result = pulse_scheduler.check_repo_changed("a/b", cache, get_fn=lambda repo, etag: (200, "abc123"))
-        self.assertTrue(result)
-        self.assertEqual(cache["commits:a/b"], "abc123")
+    def test_same_sha_as_last_tick_is_not_changed(self):
+        cache = {"sha:a/b": "abc123"}
+        self.assertFalse(pulse_scheduler.check_repo_changed("a/b", cache, get_fn=self._get(200, "abc123")))
+        self.assertEqual(cache["sha:a/b"], "abc123")
 
-    def test_first_observation_records_etag_and_is_not_a_change(self):
-        # With no saved ETag GitHub must answer 200 whether or not anything
-        # changed, so that answer carries no information about change.
+    def test_different_sha_is_changed_and_updates_cache(self):
+        cache = {"sha:a/b": "old-sha"}
+        self.assertTrue(pulse_scheduler.check_repo_changed("a/b", cache, get_fn=self._get(200, "new-sha")))
+        self.assertEqual(cache["sha:a/b"], "new-sha")
+
+    def test_first_observation_records_sha_and_is_not_a_change(self):
         cache = {}
-        result = pulse_scheduler.check_repo_changed("a/b", cache, get_fn=lambda repo, etag: (200, "abc123"))
-        self.assertFalse(result)
-        self.assertEqual(cache["commits:a/b"], "abc123")
+        self.assertFalse(pulse_scheduler.check_repo_changed("a/b", cache, get_fn=self._get(200, "abc123")))
+        self.assertEqual(cache["sha:a/b"], "abc123")
 
-    def test_second_check_after_first_observation_detects_a_real_change(self):
+    def test_change_is_reported_once_then_quiet(self):
         cache = {}
-        pulse_scheduler.check_repo_changed("a/b", cache, get_fn=lambda repo, etag: (200, "v1"))
-        result = pulse_scheduler.check_repo_changed("a/b", cache, get_fn=lambda repo, etag: (200, "v2"))
-        self.assertTrue(result)
-        self.assertEqual(cache["commits:a/b"], "v2")
+        results = [pulse_scheduler.check_repo_changed("a/b", cache, get_fn=self._get(200, sha))
+                   for sha in ("v1", "v2", "v2")]
+        self.assertEqual(results, [False, True, False])
 
-    def test_etag_saved_under_the_old_repo_record_scheme_is_ignored(self):
-        # An ETag stored under the bare repo name belonged to the old
-        # resource. It must never be sent as If-None-Match for the commit
-        # list; a repo with only that legacy entry counts as a first
-        # observation, not a change.
-        seen = {}
+    def test_values_saved_under_earlier_schemes_are_ignored(self):
+        # Bare repo-name keys (repo-record ETags) and `commits:` keys
+        # (commit-list ETags) must never be compared against a SHA; a repo
+        # with only those entries counts as a first observation.
+        cache = {"a/b": "W/\"legacy\"", "commits:a/b": "W/\"etag\""}
+        self.assertFalse(pulse_scheduler.check_repo_changed("a/b", cache, get_fn=self._get(200, "abc123")))
+        self.assertEqual(cache["sha:a/b"], "abc123")
 
-        def fake_get(repo, etag):
-            seen["etag"] = etag
-            return 200, "fresh"
-
-        cache = {"a/b": "legacy-repo-record-etag"}
-        result = pulse_scheduler.check_repo_changed("a/b", cache, get_fn=fake_get)
-        self.assertIsNone(seen["etag"])
+    def test_etag_churn_with_same_commit_is_not_a_change(self):
+        # Regression for the hosted tick at 2026-11-26T07:26Z: the ETag
+        # changed on every repo with no new commit. The check never sees
+        # or sends an ETag now; only the SHA decides.
+        cache = {"sha:octocat/Hello-World": "sha-of-a-long-dormant-repo"}
+        result = pulse_scheduler.check_repo_changed(
+            "octocat/Hello-World", cache, get_fn=self._get(200, "sha-of-a-long-dormant-repo"))
         self.assertFalse(result)
 
-    def test_failed_request_is_unknown_not_changed(self):
-        result = pulse_scheduler.check_repo_changed("a/b", {}, get_fn=lambda repo, etag: (None, None))
-        self.assertIsNone(result)
+    def test_failed_request_is_unknown_and_leaves_cache_alone(self):
+        cache = {"sha:a/b": "abc123"}
+        self.assertIsNone(pulse_scheduler.check_repo_changed("a/b", cache, get_fn=self._get(None, None)))
+        self.assertEqual(cache["sha:a/b"], "abc123")
 
     def test_unexpected_status_is_unknown_not_changed(self):
-        result = pulse_scheduler.check_repo_changed("a/b", {}, get_fn=lambda repo, etag: (500, None))
-        self.assertIsNone(result)
+        self.assertIsNone(pulse_scheduler.check_repo_changed("a/b", {}, get_fn=self._get(500, None)))
 
-    def test_prior_etag_is_passed_through_to_get_fn(self):
-        cache = {"commits:a/b": "prior-etag"}
-        seen = {}
+    def test_ok_status_without_a_sha_is_unknown(self):
+        self.assertIsNone(pulse_scheduler.check_repo_changed("a/b", {}, get_fn=self._get(200, None)))
 
-        def fake_get(repo, etag):
-            seen["etag"] = etag
-            return 304, None
 
-        pulse_scheduler.check_repo_changed("a/b", cache, get_fn=fake_get)
-        self.assertEqual(seen["etag"], "prior-etag")
+class FetchLatestShaTests(unittest.TestCase):
+    """The HTTP wrapper, with requests.get stubbed."""
+
+    class _Resp:
+        def __init__(self, status, body=None, bad_json=False):
+            self.status_code, self._body, self._bad = status, body, bad_json
+
+        def json(self):
+            if self._bad:
+                raise ValueError("not json")
+            return self._body
+
+    def _run(self, resp=None, exc=None):
+        def fake_get(*a, **k):
+            if exc:
+                raise exc
+            return resp
+        with mock.patch.object(pulse_scheduler.requests, "get", fake_get):
+            return pulse_scheduler._fetch_latest_sha("a/b")
+
+    def test_reads_sha_from_first_commit(self):
+        self.assertEqual(self._run(self._Resp(200, [{"sha": "abc"}, {"sha": "def"}])), (200, "abc"))
+
+    def test_empty_list_is_unknown(self):
+        self.assertEqual(self._run(self._Resp(200, [])), (None, None))
+
+    def test_malformed_body_is_unknown(self):
+        self.assertEqual(self._run(self._Resp(200, bad_json=True)), (None, None))
+        self.assertEqual(self._run(self._Resp(200, [{"no_sha": 1}])), (None, None))
+
+    def test_http_error_status_is_passed_through(self):
+        self.assertEqual(self._run(self._Resp(409)), (409, None))
+
+    def test_network_error_is_unknown(self):
+        import requests
+        self.assertEqual(self._run(exc=requests.exceptions.ConnectionError("x")), (None, None))
 
 
 if __name__ == "__main__":
