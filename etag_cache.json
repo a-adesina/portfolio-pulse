@@ -8,5 +8,10 @@
   "commits:pallets/flask": "W/\"ee6fecc7aaf38be37ebac9511759f32451c9554da8f76a8071014e364f9123b5\"",
   "commits:psf/requests": "W/\"3434a17770552f72dcaeb7e991f5b1c9a748633c0bdbdc734fa50fa1312543e3\"",
   "commits:github/gitignore": "W/\"7f1918a283b50b709b9b217e0e0edc9ab0f62bcf809544ab2524a645a1a0403d\"",
-  "commits:octocat/Hello-World": "W/\"03acb91f1a3923a140ef2b520ec92b24f50b0db9a9f2f99b33f5d75e516804ab\""
+  "commits:octocat/Hello-World": "W/\"03acb91f1a3923a140ef2b520ec92b24f50b0db9a9f2f99b33f5d75e516804ab\"",
+  "sha:tiangolo/fastapi": "05e6df7e906c3decba377c37548019973f40bf15",
+  "sha:pallets/flask": "49943b5a94413a530761350f04e896f76e8d620e",
+  "sha:psf/requests": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+  "sha:github/gitignore": "5e329a286aeb62cf9f7ffa6cf8721c4c3caae5b4",
+  "sha:octocat/Hello-World": "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d"
 }

@@ -1,17 +1,11 @@
 {
-  "should_pull": true,
-  "reason": "priority_change_detected",
-  "checked_at": "2026-11-26T07:26:45Z",
-  "pulls_in_last_24h": 2,
+  "should_pull": false,
+  "reason": "not_due",
+  "checked_at": "2026-11-26T18:04:17Z",
+  "pulls_in_last_24h": 1,
   "cap": 3,
-  "last_pull_at": "2026-11-25T16:06:30Z",
-  "changed_repos": [
-    "tiangolo/fastapi",
-    "pallets/flask",
-    "psf/requests",
-    "github/gitignore",
-    "octocat/Hello-World"
-  ],
+  "last_pull_at": "2026-11-26T07:26:47Z",
+  "changed_repos": [],
   "unknown_repos": [],
-  "reason_detail": "only 15.3h since the last pull (< 24h baseline), but a change was detected on 5 tracked repo(s) (tiangolo/fastapi, pallets/flask, psf/requests, github/gitignore, octocat/Hello-World) and the cap allows one more pull."
+  "reason_detail": "only 10.6h since the last pull (< 24h baseline) and no change detected (or no repos were given to check)."
 }
