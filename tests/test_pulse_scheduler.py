@@ -273,5 +273,35 @@ class FetchLatestShaTests(unittest.TestCase):
         self.assertEqual(self._run(exc=requests.exceptions.ConnectionError("x")), (None, None))
 
 
+class TriggerTests(unittest.TestCase):
+    def test_reads_the_github_event_name(self):
+        with mock.patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule"}):
+            self.assertEqual(pulse_scheduler._trigger(), "schedule")
+
+    def test_manual_dispatch_is_distinguishable_from_schedule(self):
+        with mock.patch.dict(os.environ, {"GITHUB_EVENT_NAME": "workflow_dispatch"}):
+            self.assertEqual(pulse_scheduler._trigger(), "workflow_dispatch")
+
+    def test_defaults_to_local_outside_actions(self):
+        env = {k: v for k, v in os.environ.items() if k != "GITHUB_EVENT_NAME"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertEqual(pulse_scheduler._trigger(), "local")
+
+    def test_main_writes_the_trigger_into_the_decision(self):
+        tmp = tempfile.mkdtemp()
+        decision_path = os.path.join(tmp, "d.json")
+        logged = {}
+        fake_detail = {"checked_at": "2026-11-27T00:00:00Z", "pulls_in_last_24h": 0, "cap": 3}
+        with mock.patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule"}), \
+             mock.patch.object(pulse_scheduler, "decide", lambda **k: (False, "not_due", dict(fake_detail))), \
+             mock.patch.object(pulse_scheduler, "DECISION_PATH", decision_path), \
+             mock.patch.object(pulse_scheduler.pulse_log, "log_event",
+                               lambda run_id, event, **kw: logged.update(kw)):
+            pulse_scheduler.main()
+        self.assertEqual(logged.get("trigger"), "schedule")
+        with open(decision_path) as f:
+            self.assertEqual(json.load(f)["trigger"], "schedule")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,7 @@
+{
+  "about": "Human-written notes shown beside specific scheduler decisions on the dashboard. A decision is annotated only if its exact timestamp appears here. Each note says where the explanation is recorded.",
+  "decisions": {
+    "2026-11-25T16:06:30Z": "Early pull caused by a defect: the first check of each repo was read as a change. Fixed, see INCIDENT_LOG.md part B.",
+    "2026-11-26T07:26:47Z": "Early pull caused by a defect: the ETag check reported all five repos changed with no new commit. Replaced by a commit SHA comparison, see INCIDENT_LOG.md part D."
+  }
+}

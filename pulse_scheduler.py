@@ -110,6 +110,15 @@ ETAG_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "etag
 DECISION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scheduler_last_decision.json")
 
 
+def _trigger():
+    """What started this run. In GitHub Actions the runner sets
+    GITHUB_EVENT_NAME ("schedule", "workflow_dispatch", "push"); anywhere
+    else it is "local". Recorded in every decision so the log itself can
+    say whether a tick was scheduled or started by hand, instead of that
+    being known only from someone's recollection of the Actions page."""
+    return os.environ.get("GITHUB_EVENT_NAME") or "local"
+
+
 def _parse_ts(ts):
     try:
         return datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -291,6 +300,7 @@ def decide(now=None, log_path=None, repos=None, etag_cache_path=None, change_che
 
 def main():
     should_pull, reason, detail = decide(repos=github_status_pull.TRACKED_REPOS)
+    detail["trigger"] = _trigger()
 
     run_id = pulse_log.new_run_id()
     pulse_log.log_event(run_id, "scheduler_decision", should_pull=should_pull, reason=reason, **detail)
