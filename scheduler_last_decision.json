@@ -1,11 +1,11 @@
 {
   "should_pull": false,
   "reason": "not_due",
-  "checked_at": "2026-11-26T18:04:17Z",
+  "checked_at": "2026-11-27T06:27:18Z",
   "pulls_in_last_24h": 1,
   "cap": 3,
   "last_pull_at": "2026-11-26T07:26:47Z",
   "changed_repos": [],
   "unknown_repos": [],
-  "reason_detail": "only 10.6h since the last pull (< 24h baseline) and no change detected (or no repos were given to check)."
+  "reason_detail": "only 23.0h since the last pull (< 24h baseline) and no change detected (or no repos were given to check)."
 }
