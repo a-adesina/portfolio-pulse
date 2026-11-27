@@ -5,6 +5,8 @@ project's own verification work has actually found and fixed. Not a
 changelog of features, not a list of hypothetical risks (those live in
 `GAP_ANALYSIS.md`) — only things that were genuinely wrong, caught by
 running something for real, not by reading the code and trusting it.
+Items found by reading or reasoning instead are kept in the addendum,
+labelled as such, and are not counted with the rest.
 
 **Why this exists as its own file:** the same six incidents below were
 previously scattered across `METHODOLOGY.md`, `MCP_VERIFICATION_LOG.md`,
@@ -162,13 +164,25 @@ incident #6") without renumbering later.
 
 ---
 
-## Addendum: found by the first hosted runs (not renumbered into the six)
+## Addendum: found by the first hosted days (lettered, not renumbered into the six)
 
-Kept apart from the six above on purpose, and not renumbered, because
-the "six" is quoted across other documents; the counts get reconciled in
-one pass once a full day of hosted runs is in. Part A is a test-suite
-defect. Parts B, C and D are defects in `pulse_scheduler.py`, the same
-kind as the six.
+Lettered rather than numbered, because "incident #5" and "incident #6"
+are cited by number in other documents and renumbering would break those
+references. The counts are reconciled here, and every other document
+uses these figures:
+
+| How it was found | Items | Count |
+|---|---|---|
+| By running something, before the project was hosted | #1 to #6 | 6 |
+| By running something, in the first hosted days (25 to 27 Nov 2026) | A, B, D, F | 4 |
+| **Total found by running** | | **10** |
+| By reading or reasoning, not by the failure occurring (kept apart, not counted above) | C, E, G here; the install-step and state-persistence gaps in `SOW.md` criteria 9 and 10 | 5 |
+
+Part A is a test-suite defect. Parts B and D are defects in
+`pulse_scheduler.py` that a hosted run exposed. Part C is a design flaw
+found by reasoning. Part E is a workflow defect found by reading and
+reproduced locally. Part G is a test-diagnostic defect found by reading
+the helper after a report misstated its own cause. Parts A and F are test-suite defects. Each of A, B, D and F has a permanent regression test (for A, a corrected test).
 
 ### A. The live CI test (test-suite defect)
 
@@ -286,13 +300,76 @@ kind as the six.
 
 ---
 
+### E. The persist step would have failed on its first tick (workflow defect, found by reading, fixed before it ran)
+
+- **Found:** reading the `Persist scheduler state` step before the first
+  scheduled tick. It ran `git add` on all four state files in one command.
+  On a first tick some of them do not exist yet (`etag_cache.json` is
+  created by the scheduler's first priority check, `pull_results.json`
+  only by a pull). `git add` with any missing path exits 128 and stages
+  nothing, so the state would not have been saved.
+- **How it was confirmed:** reproduced in a scratch repository. That
+  reproduces git's behaviour; it is not an observation of the hosted
+  workflow failing, because the fix went in before the first hosted tick.
+- **Fix:** a loop that stages only the files that exist, tested under
+  `set -e`.
+- **Not counted in the ten:** found by reading, then reproduced, not by
+  the failure happening.
+
+### F. A test deleted the real `pull_results.json` (test-suite defect)
+
+- **Found:** 27 Nov 2026, running the full suite in a clone of the hosted
+  repository while updating the documentation. `git status` afterwards
+  showed `pull_results.json`, a committed file, as deleted.
+- **What was wrong:** `test_one_repo_raising_does_not_abort_the_batch`
+  calls the real `main()`, which writes `pull_results.json`, and its
+  cleanup then removed that path unconditionally. In any working copy that
+  held a real pull, running the suite overwrote it with test data and then
+  deleted it. `tests/test_agent_eval.py` already did this safely (it moves
+  an existing file aside); this test did not.
+- **Reach:** local runs only. The hosted test job starts from a fresh
+  checkout and the unattended job does not run the tests, so no hosted
+  state was affected. Whether the owner's own working copy was hit is not
+  known.
+- **Fix:** the test now moves any existing file aside and restores it
+  byte for byte, and asserts that it did. In the hosted test job the
+  committed file is present, so that assertion runs there too.
+- **Verified:** the full suite run in a clone holding the file leaves it
+  unchanged; before the fix the same run left it deleted.
+
+### G. A skip message claimed a rate limit when the quota could not be read (test-diagnostic defect, found by reading)
+
+- **Found:** 27 Nov 2026, in the regenerated `TEST_REPORT.md` for the
+  build sandbox, which said two live tests were skipped because "GitHub
+  API rate limit was exhausted ... (0 remaining, confirmed immediately
+  after)". This sandbox is known to block GitHub reads, so the claim
+  looked wrong, and the helper's code confirmed it.
+- **What was wrong:** `_current_rate_remaining` returned 0 when the request
+  failed, and also when the answer had no `rate` block (an error body from
+  a proxy or block page), so "could not read the quota" was reported as
+  "quota exhausted". The test report then stated a cause that was not
+  established.
+- **Not established:** what the rate-limit endpoint actually returned in
+  the sandbox. The fix does not depend on it.
+- **Fix:** an unreadable quota now returns `None` and skips with a message
+  saying the quota could not be read; 0 is reported only when GitHub says
+  0. Tests cover a failed request, an answer with no `rate` block, a
+  non-JSON answer, a genuinely exhausted quota (still reported as
+  exhausted) and a healthy quota with a `None` result (still a failure).
+- **Not counted in the ten:** the wrong wording was found by reading the
+  helper after seeing the report; it did not cause a wrong test result.
+
+---
+
 ## What this log is, and isn't
 
-Six real defects across this build, zero of them hypothetical, all six
-closed with a fix and a permanent regression test. This is not evidence
+Ten real defects across this build and its first hosted days (six
+before hosting, four after), zero of them hypothetical, each closed
+with a fix and a permanent regression test. Five further gaps found by
+reading or reasoning are recorded separately and not counted. This is not evidence
 that the system is now defect-free — `GAP_ANALYSIS.md` names a long list
 of things that have never been exercised at all (concurrency, real
-scale, a hosted CI run, a live model actually calling these tools). It is
+scale, a live model actually calling these tools, a real alert firing). It is
 evidence of a discipline: every time a piece of this system was actually
 run for the first time, under real conditions, something was found — and
 the response each time was a fix plus a test that makes the same mistake

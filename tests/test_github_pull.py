@@ -307,14 +307,34 @@ class BatchResilienceTests(unittest.TestCase):
         mock_pull.side_effect = side_effect
         original_repos = gsp.TRACKED_REPOS
         gsp.TRACKED_REPOS = ["bad/repo", "good/repo"]
+
+        # gsp.main() writes pull_results.json. An earlier version of this
+        # test deleted that file afterwards, which destroyed a real pull
+        # whenever the suite was run in a working copy that held one
+        # (INCIDENT_LOG.md addendum F). Move any existing file aside and
+        # put it back, byte for byte.
+        import os as _os
+        import shutil as _shutil
+        out_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "pull_results.json")
+        backup_path = out_path + ".test_backup"
+        original_bytes = None
+        if _os.path.exists(out_path):
+            with open(out_path, "rb") as f:
+                original_bytes = f.read()
+            _shutil.move(out_path, backup_path)
         try:
             results = gsp.main()
         finally:
             gsp.TRACKED_REPOS = original_repos
-            import os as _os
-            out_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "pull_results.json")
             if _os.path.exists(out_path):
                 _os.remove(out_path)
+            if _os.path.exists(backup_path):
+                _shutil.move(backup_path, out_path)
+
+        if original_bytes is not None:
+            with open(out_path, "rb") as f:
+                self.assertEqual(f.read(), original_bytes,
+                                 "an existing pull_results.json must survive this test unchanged")
 
         # The bad repo is skipped, but the good one still makes it
         # through, that's the whole point of the fix.
@@ -346,9 +366,18 @@ class LiveIntegrationTests(unittest.TestCase):
         import requests
         try:
             resp = requests.get("https://api.github.com/rate_limit", timeout=10)
-            return resp.json().get("rate", {}).get("remaining", 0)
+            rate = resp.json().get("rate")
         except Exception:
-            return 0
+            rate = None
+        # None, not 0, whenever GitHub did not actually report a quota: a
+        # request that failed, or an answer with no "rate" block (an error
+        # body from a proxy or a block page). "Could not read the quota" is
+        # a different condition from "GitHub says the quota is used up",
+        # and the skip message must not claim the second when it was the
+        # first (INCIDENT_LOG.md addendum G).
+        if not isinstance(rate, dict) or not isinstance(rate.get("remaining"), int):
+            return None
+        return rate["remaining"]
 
     def _skip_if_result_none_due_to_rate_limit(self, result, context):
         """Called when a test expected a non-None result and got None.
@@ -356,7 +385,15 @@ class LiveIntegrationTests(unittest.TestCase):
         (skip, honestly, not a code issue) from 'quota is fine but the
         result was still None' (a real potential defect, fail on it)."""
         remaining = self._current_rate_remaining()
-        if remaining == 0:
+        if remaining is None:
+            self.skipTest(
+                f"{context}: the GitHub API quota could not be read from this "
+                f"environment (no usable answer from the rate-limit endpoint, for "
+                f"example because the network is blocked), so the live check could "
+                f"not run. Not a code failure, and the equivalent logic path is "
+                f"covered deterministically by MockedNegativeCaseTests above."
+            )
+        elif remaining == 0:
             self.skipTest(
                 f"{context}: GitHub API rate limit was exhausted during this "
                 f"attempt (0 remaining, confirmed immediately after). Not a code "
@@ -369,6 +406,56 @@ class LiveIntegrationTests(unittest.TestCase):
                 f"calls remain, so this is NOT a rate-limit condition and may be "
                 f"a genuine defect worth investigating, not a quota issue."
             )
+
+    def test_an_unreadable_quota_is_reported_as_unreadable_not_as_rate_limited(self):
+        import requests
+        from unittest.mock import patch as _patch
+
+        class _Resp:
+            def __init__(self, body):
+                self._body = body
+
+            def json(self):
+                return self._body
+
+        cases = {
+            "request fails": dict(side_effect=requests.exceptions.ConnectionError("blocked")),
+            "answer has no rate block": dict(return_value=_Resp({"message": "blocked by policy"})),
+            "answer is not json": dict(return_value=type("R", (), {"json": lambda self: (_ for _ in ()).throw(ValueError("x"))})()),
+        }
+        for name, kwargs in cases.items():
+            with self.subTest(name):
+                with _patch.object(requests, "get", **kwargs):
+                    self.assertIsNone(self._current_rate_remaining())
+                    with self.assertRaises(unittest.SkipTest) as cm:
+                        self._skip_if_result_none_due_to_rate_limit(None, "ctx")
+                self.assertIn("could not be read", str(cm.exception))
+                self.assertNotIn("rate limit was exhausted", str(cm.exception))
+
+    def test_a_genuinely_exhausted_quota_is_still_reported_as_exhausted(self):
+        import requests
+        from unittest.mock import patch as _patch
+
+        class _Resp:
+            def json(self):
+                return {"rate": {"remaining": 0}}
+
+        with _patch.object(requests, "get", return_value=_Resp()):
+            with self.assertRaises(unittest.SkipTest) as cm:
+                self._skip_if_result_none_due_to_rate_limit(None, "ctx")
+        self.assertIn("rate limit was exhausted", str(cm.exception))
+
+    def test_a_quota_with_calls_remaining_makes_a_none_result_a_failure(self):
+        import requests
+        from unittest.mock import patch as _patch
+
+        class _Resp:
+            def json(self):
+                return {"rate": {"remaining": 4000}}
+
+        with _patch.object(requests, "get", return_value=_Resp()):
+            with self.assertRaises(self.failureException):
+                self._skip_if_result_none_due_to_rate_limit(None, "ctx")
 
     def test_live_nonexistent_repo_returns_none(self):
         # A None result here is correct either way, a genuine 404 or a

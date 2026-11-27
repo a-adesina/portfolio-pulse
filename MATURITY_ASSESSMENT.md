@@ -38,6 +38,18 @@ scheduler, `pulse_scheduler.py`) is added where it belongs: it makes the
 same "never observed running in a hosted repo" boundary every prior
 unattended-run claim in this project has had from the start.
 
+**Third revision note (the first hosted days, 25 to 27 Nov 2026):** the
+project has now been published to a public GitHub repository and its
+scheduled job has run on real ticks, so several statements below that said
+"never observed running in a hosted repo" were no longer true and have
+been rewritten, not appended to. What changed is stated precisely: it has
+**run in a hosted repo for just over two days**, which is not the
+same as "has run unattended for a real stretch of time". The hosted days
+also found four real defects (counted in `INCIDENT_LOG.md`), including two
+cases of the scheduler deciding wrongly, which this document treats as
+evidence in favour of the verification discipline and against any claim
+that the scheduler was right the first time. Nothing here moves a tier.
+
 **The framework, as given:**
 
 | Tier | What it looks like | Test |
@@ -125,24 +137,22 @@ output, failing the run on a mismatch — is the independent check Tier
 4's "agentic" half actually asks for, and it does not exist yet. See
 "Path to a clean Tier 4" below for exactly what closes this.
 
-**One more factor that keeps even the data-path claim from being a
-clean, unqualified "live system":** most of what this project
-demonstrates end to end (the sample report, the sample dashboard, the
-verification run) is built from `fixture_for_testing.json`, a
-schema-accurate fixture, not a full live pull — disclosed plainly in
-`README.md`'s "What's real and what isn't" section, not something this
-assessment is surfacing for the first time. Exactly one row, ever, has
-been genuinely live (`tiangolo/fastapi`, in `pull_results_PRE_FIX_LIVE_partial.json`)
-— and that row was pulled under the OLD, pre-fix `pushed_at` logic, before
-the schema even changed, specifically to document the bug. Under the
-CURRENT, fixed pipeline, zero rows have been pulled live end-to-end and
-reported. The data/tool verification itself is real and repeatable (the
-mechanism was proven against real GitHub responses at several points);
-the specific claim "this is a live system showing live data" is not yet
-defensible as stated, and the budget layer is synthetic throughout
-(`SOW.md` §5; public repos have no real budget to pull). Neither of these
-breaks the project. Both mean "live system" needs the qualifier attached
-every time it's said, not dropped under a follow-up question.
+**Two qualifiers on "live system", one of which has changed.** First, the
+sample report, sample dashboard and verification run in the repository are
+built from `fixture_for_testing.json`, a schema-accurate fixture, and are
+labelled as such (`README.md`, "What's real and what isn't"). Second, and
+**this has changed**: until 25 Nov 2026 no row had ever been pulled live
+under the current, fixed pipeline (the one live row in
+`pull_results_PRE_FIX_LIVE_partial.json` predates the fix). Since then the
+hosted job has pulled five public repositories live, repeatedly, and
+committed the result (`pull_results.json`); "this is a live system showing
+live data" is now defensible for the **delivery, CI and ticket signal on
+those five repos**. It is still not defensible for anything about a real
+organisation's projects, those five are public open-source projects used as
+a stand-in portfolio, and the budget layer remains synthetic (`SOW.md` §5);
+the delivery dashboard now omits spend entirely rather than show a
+representative figure. Neither qualifier breaks the project. Both mean
+"live system" needs its scope attached every time it is said.
 
 ## Tier 5 — In production for other people
 
@@ -156,20 +166,21 @@ component instead of a single checkbox.**
 
 | Component | State |
 |---|---|
-| Runs unattended | Mechanism built, never observed running unattended over real time. `pulse_scheduler.py` (Phase 10) decides each tick whether to pull — a 24h baseline, an earlier pull only on a detected change, capped at 3 pulls per rolling 24h — and `.github/workflows/tests.yml`'s `unattended-pull` job calls it on a `schedule:` trigger, persisting `pulse_run_log.jsonl`/`etag_cache.json` back to the repo so the cap and baseline survive between ticks. The decision logic is unit-tested (`tests/test_pulse_scheduler.py`, deterministic, mocked network). None of it has actually fired from inside a real hosted GitHub Actions environment — same boundary this item has had since Phase 8, now resting on more mechanism, not more proof. |
+| Runs unattended | **Mechanism built and observed running in a hosted repo for just over two days; not yet for a real stretch of time.** `pulse_scheduler.py` decides each tick whether to pull: a 24h baseline, an earlier pull only when a tracked repo's newest commit SHA has changed, never more than 3 pulls per rolling 24h. The `unattended-pull` job calls it on a `schedule:` trigger and commits `pulse_run_log.jsonl`/`etag_cache.json` back so the cap and baseline survive between ticks. Observed (25 to 27 Nov 2026): five of five repos pulled live; state surviving between separate runs; a manual run correctly deciding `baseline_due` at 27.4h; three quiet ticks with no false changes; a scheduled run executing and recording `"trigger": "schedule"` (27 Nov 17:48Z). Observed going wrong: two false early pulls (25 and 26 Nov), fixed, see `INCIDENT_LOG.md` B and D. Not yet observed: a scheduled tick performing the baseline pull; a real commit causing an early pull (unit-tested only). Scheduled ticks have not landed on the cron slots and the reason is not established. |
 | Has users | Not met, and not fabricated as met. Zero real users; `SOW.md` §5 names production-scale deployment as explicitly out of scope. |
 | Evals | Two distinct eval layers now exist, both tested, neither yet run against a live model. `tests/test_agent_eval.py` evaluates the agent *scaffolding* mechanically (see Tier 4) — the loop doesn't crash or truncate data. `grounding_eval.py` (Phase 9) is the complementary live-grounding check: for a real agent answer, extract every number/status claim and diff it against the real tool output from that same run, fail on mismatch. Its extraction/comparison logic is tested (`tests/test_grounding_eval.py`); its model-facing half has never run, same stated limit as `agent_client.py` itself — no `ANTHROPIC_API_KEY` has been available at build time. |
 | Monitoring | Logging and alerting both exist and are tested; neither has fired for a real condition in real operation. `pulse_log.py` produces structured, queryable run/repo events. `pulse_alert.py` (Phase 9) reads that log and fires a real webhook POST (or states plainly what it would have sent, with none configured) on three named conditions — a crashed run, a total pull failure, a repeated-failure pattern — tested against hand-built log histories (`tests/test_pulse_alert.py`). What's missing isn't the mechanism, it's a real alert actually firing during real unattended operation; nothing in this build environment has produced that condition for real yet. |
-| Incident log | **Still not met, but a real, honest template now exists where before there was nothing.** `INCIDENT_LOG.md` remains the build-time defect log — found by this project's own verification work, not by a live user or production monitoring, so it stays a precursor rather than the thing itself. `OPERATIONAL_INCIDENTS.md` (Phase 9) is the genuinely separate file this tier actually asks for: deliberately empty, with its own "empty, by design, not by oversight" statement, waiting for the "runs unattended" item above to actually run long enough to produce a real entry. Building the template doesn't close the gap; it names exactly what has to happen next to close it. |
+| Incident log | **Not met as a whole, but no longer empty.** `INCIDENT_LOG.md` remains the defect history: ten found by running (six at build time, four in the first hosted days) and five found by reading or reasoning, counted separately. `OPERATIONAL_INCIDENTS.md` now holds two entries from the hosted days (the two false early pulls), each tied to a timestamped decision in the run log. Both were found by the owner reading the decision log, not by monitoring or a user, and no alert fired for either, so this is a builder's log of operation, not yet the incident log this tier describes. |
 
 **Honest summary for this tier:** don't claim "production" or "has
 users." Do claim, specifically, "four of this tier's five components —
 an unattended-run scheduler, two distinct eval layers, alerting on top
 of structured logs, and a real operational-incident template — are
 built and tested against a project that has deliberately never faked
-the fifth (real users), and none of the four has yet been observed
-firing under real, unattended operation; that's the next thing to prove,
-not more code to write."
+the fifth (real users). The first of the four, the unattended scheduler,
+has now run in a hosted repo for just over two days, including two
+decisions it got wrong; the other three have not yet fired for real.
+What is left is time and real conditions, not more code to write."
 
 ## Path to a clean Tier 4
 
@@ -194,12 +205,15 @@ written, for the first time, and watching what actually happens:
 3. **Do one full live pull with a `GITHUB_TOKEN`** (or let the CI
    workflow run once this is hosted in a real repo), with zero fixture
    rows in the reported result — closing the gap named above, not
-   narrowing it with a partial or mixed pull.
+   narrowing it with a partial or mixed pull. **Done 25 Nov 2026**, and
+   repeated since: the hosted job pulled five of five repos with no
+   fixture rows (`pull_results.json`). Steps 1 and 2 are not done.
 
 **What to say until all three are done, verbatim:** "I built a
 self-verifying status pipeline and an MCP tool layer. The verification
-caught six real bugs, four in the data path, two in the agent's
-scaffolding. The agent on top is written and its scaffolding is tested,
+caught ten real bugs: four in the data path, two in the agent's
+scaffolding, and four in the first days of hosted running (two in the
+test suite, two in the scheduler). The agent on top is written and its scaffolding is tested,
 but no agent has actually acted in this system yet, and here's exactly
 how I'd prove it." That holds under a third follow-up, in a hostile
 interviewer's style, because every clause in it is backed by a file. "I built a
@@ -231,8 +245,12 @@ happened" is exactly the error this whole document exists to avoid:
    obeying its own cap and baseline, across failures and successes,
    over a real stretch of time (weeks, not one run) with no one
    intervening. That history can only be earned by letting it run, not
-   written in advance — this item moved from "not started" to "built
-   and tested, waiting on real time," not to "done."
+   written in advance. **Update, 27 Nov 2026:** a run history now exists
+   and is just over two days long. It includes scheduled runs, a
+   manual run, three quiet ticks and two wrong decisions that the owner
+   caught by reading the log, not an alert. This item has moved from
+   "built and tested, waiting on real time" to "running, early, with its
+   first two defects found and fixed"; it is not "done."
 2. **Evals — the live half built, not yet run. The scaffolding half
    already closed.** `grounding_eval.py` (Phase 9) is the live
    grounding eval named here: extract every claim from a live agent
@@ -262,7 +280,10 @@ happened" is exactly the error this whole document exists to avoid:
    honestly contain anything until something real goes wrong in real
    operation. The template was buildable in an afternoon and is done;
    an incident log cannot be backfilled with incidents that haven't
-   happened, and nothing about Phase 10 changes that.
+   happened. **Update, 27 Nov 2026:** two real operational entries now exist
+   (`OPERATIONAL_INCIDENTS.md` OP-1 and OP-2), both found by the owner,
+   neither by an alert, which is itself the finding: the alerting has no
+   condition for a successful run that should not have happened.
 5. **Has users — not buildable at all, by design, and the one honest
    way to get there is named, not worked around.** A real person,
    other than whoever built this, relying on it for something real.
@@ -279,8 +300,8 @@ happened" is exactly the error this whole document exists to avoid:
 
 **Honest summary for Tier 5, now that four of five are actually
 built:** the remaining work on those four isn't more code, it's time —
-a real hosted repo, a real stretch of unattended runs, a real webhook
-URL, a real condition that triggers it. The fifth, users, is a statement
+a longer stretch of unattended runs (the hosted repo now exists), a real
+webhook URL, a real condition that triggers it. The fifth, users, is a statement
 about the world, not about the code, and stays open until someone
 genuinely adopts it — stated here precisely so "I built the mechanisms
 for Tier 5" is never allowed to quietly become "I'm at Tier 5" before
@@ -341,11 +362,14 @@ than overclaimed.**
 - **Multi-agent hand-offs:** not present. One MCP server, one agent
   client, no hand-off between agents of any kind.
 - **Failures become tests:** this is real, and it is the one part of
-  this tier worth claiming explicitly. Every one of the six incidents in
-  `INCIDENT_LOG.md` produced a permanent regression test, not just a
-  fix — `test_partial_failure_on_commit_lookup_does_not_report_false_active`,
+  this tier worth claiming explicitly. Every one of the ten incidents
+  found by running (the six numbered ones and addendum A, B, D and F in
+  `INCIDENT_LOG.md`) produced a permanent regression test, or for A a
+  corrected test, not just a fix. Examples: `test_partial_failure_on_commit_lookup_does_not_report_false_active`,
   `test_403_rate_limit_never_retries`, and the two new agent-eval tests
-  are the test-side half of incidents #3, #4 (by pattern), #5, and #6. It
+  are the test-side half of incidents #3, #4 (by pattern), #5, and #6;
+  `test_etag_churn_with_same_commit_is_not_a_change` is the test-side half
+  of addendum D. It
   is not *automatic* in the sense of a system that writes its own tests
   unsupervised — a human (directing AI) wrote each one, deliberately,
   every time. "Failures become tests, as a consistently applied
@@ -365,13 +389,16 @@ now real, tested artifacts — a priority-aware unattended-pull scheduler
 with its own cap/baseline logic, two distinct eval layers (scaffolding
 and live-grounding), alerting on top of structured logs, and an
 operational-incident template — and the fifth, real users, is correctly
-left unbuilt, not simulated. None of the four has actually fired during
-real unattended operation yet; that's the next thing this project needs
-time, not more code, to prove. Tier 6 isn't applicable to a solo build.
+left unbuilt, not simulated. The scheduler has run in a hosted repo for
+just over two days, including two wrong decisions the owner caught
+and fixed; the alerting, the live eval and a live model have not fired
+for real. Time, not more code, is what this project needs to prove the
+rest. Tier 6 isn't applicable to a solo build.
 Tier 7's multi-agent claim isn't met; its "failures become tests" claim
 is real, as a discipline, not an automation. Two further qualifiers
-apply throughout: most of what this project demonstrates runs on a
-fixture, not a live pull (disclosed in `README.md`, not new here), and
-the budget layer is synthetic. Say "3-4, clean on the data path, not yet
+apply throughout: the sample report and sample dashboard in the repository
+are built from a fixture (disclosed in `README.md`), while the delivery
+data the hosted job now pulls is live for five public repositories; and
+the budget layer is synthetic, so the delivery dashboard shows no spend. Say "3-4, clean on the data path, not yet
 on the agent path" rather than "4," and "the Tier 5 mechanisms are built
 and tested" rather than "Tier 5."

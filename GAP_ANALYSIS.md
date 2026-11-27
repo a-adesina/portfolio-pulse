@@ -58,7 +58,7 @@ ranking:
 
 | Gap | Severity | Why it matters | Current state |
 |---|---|---|---|
-| Polling, not event-driven | ~~P1~~ **Partially addressed** | The wrong model at real scale; re-fetching and re-deriving state on demand doesn't match how GitHub actually notifies interested parties | `pulse_scheduler.py` (Phase 10) makes the polling cheaper and priority-aware — a conditional (ETag) check, not a full pull, decides whether a real pull is warranted before the next 24h baseline — but it is still polling, not a webhook listener. Real event-driven ingestion needs admin access to register a webhook on the tracked repo, which none of the five `TRACKED_REPOS` grant (third-party repos); stated as a real architectural limit, not solved by a smarter poll |
+| Polling, not event-driven | ~~P1~~ **Partially addressed** | The wrong model at real scale; re-fetching and re-deriving state on demand doesn't match how GitHub actually notifies interested parties | `pulse_scheduler.py` (Phase 10) makes the polling cheaper and priority-aware — a cheap check of each repo's newest commit SHA, not a full pull, decides whether a real pull is warranted before the next 24h baseline — but it is still polling, not a webhook listener. Real event-driven ingestion needs admin access to register a webhook on the tracked repo, which none of the five `TRACKED_REPOS` grant (third-party repos); stated as a real architectural limit, not solved by a smarter poll |
 | No persistence or time-series storage | P1 | Can only state current status, never trend, "getting better or worse" is a real reporting need this can't answer | Flat JSON/CSV, overwritten each run |
 | Sequential, not concurrent | P2 | 40-50 repos take 40-50x one repo's time | One repo processed at a time |
 
@@ -74,9 +74,9 @@ ranking:
 
 | Gap | Severity | Why it matters | Current state |
 |---|---|---|---|
-| Tests not wired to CI | ~~P1~~ **Addressed** | Tests only run when someone remembers to run them locally, not on every change | `.github/workflows/tests.yml` runs the suite on every push/PR across Python 3.10-3.12, using the Actions-provided token so live integration tests get a real chance to run, not just skip; not yet verified running in a real hosted repo, see §6 |
-| No coverage measurement | P2 | 45 tests sounds substantial; the actual percentage of the codebase they exercise is unmeasured | No coverage tool configured |
-| Renderers and MCP tool wrappers untested by test code | P1 | `generate_report.py`, `generate_dashboard.py`, and `mcp_server.py`'s tool logic were verified manually and visually, not by automated tests | Verified once, not regression-protected |
+| Tests not wired to CI | ~~P1~~ **Addressed** | Tests only run when someone remembers to run them locally, not on every change | `.github/workflows/tests.yml` runs the suite on every push/PR across Python 3.10-3.12, using the Actions-provided token so live integration tests get a real chance to run, not just skip; verified running in a real hosted repo from 25 Nov 2026 (first run red on a test defect, since fixed; green on all three versions), see §6 and §10 |
+| No coverage measurement | P2 | 127 tests sounds substantial; the actual percentage of the codebase they exercise is unmeasured | No coverage tool configured |
+| Renderers and MCP tool wrappers untested by test code | ~~P1~~ **Partially addressed** | `generate_report.py`, `generate_dashboard.py`, and `mcp_server.py`'s tool logic were verified manually and visually, not by automated tests | `generate_dashboard.py` now has render tests (`tests/test_dashboard_render.py`: no spend on the page, no stale claims, text from data files escaped, wording checks). `generate_report.py` and the MCP tool wrappers are still verified once, not regression-protected |
 | No evaluation framework for the agent layer | ~~P1~~ **Partially addressed** | Nothing systematically checked the agent's scaffolding, let alone whether its live judgment stays grounded in tool results over time | `tests/test_agent_eval.py` drives the real `mcp_server.py` subprocess through `agent_client.py`'s real tool-use loop with a scripted model, and already caught two real bugs (see `INCIDENT_LOG.md` #5–#6). This tests the scaffolding the model runs on (tool-schema conversion, multi-round orchestration, structured errors, the call cap) — it does NOT test a live model's actual judgment, which still requires a credential and remains fully untested. Don't let "there's an eval suite now" become "the agent is evaluated" |
 | Never tested at real scale | P2 | Five repos, not forty; no load testing performed | Fixture-scale only |
 
@@ -112,7 +112,9 @@ changes:
    a mismatch fails. This is what Tier 4's "independent check catches
    the system's own errors" test actually asks for on the agent side.
 3. Do one full live pull via `GITHUB_TOKEN` (or a real hosted CI run)
-   with zero fixture rows in the reported result.
+   with zero fixture rows in the reported result. **Done 25 Nov 2026:**
+   the hosted `unattended-pull` job pulled all five tracked repos live,
+   and has repeated it since (`pull_results.json` in the repository).
 
 Full reasoning in `MATURITY_ASSESSMENT.md`'s "Path to a clean Tier 4."
 
@@ -203,13 +205,14 @@ not theoretical. Fixed by checking after the attempt and diagnosing a
 `None` result against quota at that point, rather than predicting from a
 stale reading taken moments earlier.
 
-**Honest limit on the CI item specifically:** `.github/workflows/tests.yml`
-is written and its YAML validated, but this project isn't hosted in a
-real GitHub repository from this build environment, so the workflow has
-not been observed actually running in GitHub Actions. That's a real,
-stated boundary, the same "written correctly, not yet run live" category
-as `agent_client.py`'s agent layer elsewhere in this project, not
-silently assumed to work because the YAML parses.
+**Honest limit on the CI item specifically, as written at the time:**
+`.github/workflows/tests.yml` was written and its YAML validated, but the
+project was not hosted, so the workflow had not been observed running in
+GitHub Actions. **Superseded 25 Nov 2026:** it has now run in a hosted
+repository. The first run was red on all three Python versions, which is
+the point of that boundary: a live test asserted something untrue of the
+repo it queried (`INCIDENT_LOG.md` addendum A). Fixed; later runs are
+green. See §10.
 
 ## 7. Progress: two more items closed, against a 7-tier AI-maturity framework
 
@@ -284,11 +287,13 @@ anything, unlike every incident in `INCIDENT_LOG.md` — stated as a
 different, lesser category of catch rather than folded into that list
 to inflate it to seven.
 
-**Honest limit on this phase specifically:** none of the four components
-above has fired for real yet. The mechanisms are written and
-test-covered; what's missing is this project actually running
-unattended, in a real repo, against real credentials, which is exactly
-what Phase 9 cannot manufacture and does not claim to.
+**Honest limit on this phase specifically, as written at the time:** none
+of the four components above had fired for real. The mechanisms were
+written and test-covered; what was missing was this project actually
+running unattended, in a real repo, against real credentials, which Phase
+9 could not manufacture and did not claim to. **Update, 27 Nov 2026:** the
+unattended job has since run on real ticks (§10). The alerting, the live
+grounding eval and a live model are still unobserved.
 
 ## 9. Progress: a user-directed correction to the unattended-pull cadence
 
@@ -304,9 +309,11 @@ the correction:
   everything else below.
 - A 24h baseline: if it's been at least 24h since the last pull (or
   there's never been one), pull now.
-- A priority trigger: if the baseline isn't due, a cheap conditional
-  (ETag) check against each tracked repo can still trigger an earlier
-  pull if something actually changed — "prompted for more," in the
+- A priority trigger: if the baseline isn't due, a cheap check
+  against each tracked repo can still trigger an earlier
+  pull if something actually changed (originally an ETag comparison,
+  replaced by a commit-SHA comparison after the ETag misfired in the
+  hosted repo, see §10) — "prompted for more," in the
   user's words — but only while the cap allows it.
 
 `.github/workflows/tests.yml`'s `unattended-pull` job now calls
@@ -337,11 +344,66 @@ with no template named, after `pulse_alert.py` and
 as adding Phase 10, rather than left for a reader to notice the
 mismatch first.
 
-**Honest limit, same as every prior unattended-run claim in this
-project:** the scheduler's decision logic is unit-tested
-(`tests/test_pulse_scheduler.py`, 19 tests, deterministic, network
-stubbed). It has not been observed deciding correctly, tick after tick,
-from inside a real hosted GitHub Actions environment with real state
-persisting between runs. That observation is the only thing that can
-actually prove the cadence holds in practice; nothing in this sandbox
-can manufacture it.
+**Honest limit, as written at the time:** the scheduler's decision logic
+was unit-tested (19 tests then, 32 now, deterministic, network stubbed)
+but had not been observed deciding correctly across real hosted ticks.
+That observation began on 25 Nov 2026 and is reported in §10, including
+the two places where the observation showed the scheduler deciding wrongly.
+
+## 10. Progress: the first hosted days (25 to 27 Nov 2026)
+
+The project was published to a public GitHub repository and the
+`unattended-pull` job ran on real ticks. This section records what was
+observed, what went wrong, and what is still unobserved, in the same
+three-way split used elsewhere in this project. The count of defects found
+is reconciled in `INCIDENT_LOG.md` and quoted here: ten found by running
+(six before hosting, four after) and five found by reading or reasoning.
+
+**Observed, in the hosted environment:**
+
+- The test workflow green on Python 3.10, 3.11 and 3.12, after a first run
+  that was red because of a test-suite defect (addendum A).
+- Five of five tracked repositories pulled live under the current
+  pipeline, repeatedly (25 Nov 16:02Z and 16:06Z; 26 Nov 07:26Z; 27 Nov
+  10:49Z).
+- Scheduler state surviving between separate runs: a later run read an
+  earlier run's log and decided on it, and a bot commit saved the state
+  after every tick.
+- A manual run on 27 Nov at 10:49Z correctly deciding `baseline_due`
+  after 27.4 hours.
+- Three quiet ticks under the commit-SHA check (26 Nov 18:04Z, 27 Nov
+  06:27Z and 17:48Z), each reporting no changed repos. The pulled data
+  agrees: `days_since_last_commit` rose by one per day for the repos
+  checked.
+- A scheduled run executing, with the run log itself recording
+  `"trigger": "schedule"` (27 Nov 17:48Z). The five ticks between 25 Nov
+  23:57Z and 27 Nov 17:48Z were reported by the owner as scheduled; the
+  earlier four predate the trigger field, so their trigger is not in the
+  log.
+
+**What went wrong:** two false early pulls (25 Nov 16:06Z, 26 Nov
+07:26Z), each putting a pull inside the first 24 hours. The cap of 3
+limited the damage; the one-a-day intent was not met on those days. The
+causes are in `INCIDENT_LOG.md` parts B and D. The fix for the second was
+a switch from comparing ETags to comparing commit SHAs, and the cause of
+the ETag change was never established. Neither triggered an alert,
+because `pulse_alert.py` watches for failed runs, not for a successful run
+that should not have happened (`OPERATIONAL_INCIDENTS.md`).
+
+**Still unobserved:** a scheduled tick performing the baseline pull; a
+real commit causing an early pull (unit-tested only); `pulse_alert.py`
+firing or a webhook delivering; a live model; the CI-built dashboard (no
+pull has run since it changed). Scheduled ticks have not landed on the
+cron slots, and the reason is not established.
+
+**Scale of the evidence:** just over two days of hosted operation,
+against a bar of weeks. This section closes the gap between "never run in
+a hosted repo" and "has run in one"; it does not close the gap to "has run
+unattended for a real stretch of time".
+
+**Also found and fixed:** a test in the suite deleted the real
+`pull_results.json` from any working copy that held one (addendum F;
+local runs only).
+
+**Also closed:** the workflow's actions were bumped off Node 20 after the
+runner warned they were being forced onto Node 24.

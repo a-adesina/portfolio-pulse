@@ -1,13 +1,13 @@
 # Test Report
 
-Generated 2026-11-25 14:41 UTC. 92 tests run: 90 passed, 2 skipped, 0 failed, 0 errored.
+Generated 2026-11-27 21:01 UTC. 127 tests run: 125 passed, 2 skipped, 0 failed, 0 errored.
 
 All executed tests passed. Skipped tests (if any) are listed below with their specific reason, they are not counted as passing and should not be read as such.
 
 ## Skipped, with reasons
 
-- `tests.test_github_pull.LiveIntegrationTests.test_live_dormant_repo_is_stale`: dormant-repo staleness check: GitHub API rate limit was exhausted during this attempt (0 remaining, confirmed immediately after). Not a code failure, an external quota state, and the equivalent logic path is covered deterministically by MockedNegativeCaseTests above.
-- `tests.test_github_pull.LiveIntegrationTests.test_live_repo_with_no_ci_configured`: no-CI-configured check: GitHub API rate limit was exhausted during this attempt (0 remaining, confirmed immediately after). Not a code failure, an external quota state, and the equivalent logic path is covered deterministically by MockedNegativeCaseTests above.
+- `tests.test_github_pull.LiveIntegrationTests.test_live_dormant_repo_is_stale`: dormant-repo staleness check: the GitHub API quota could not be read from this environment (no usable answer from the rate-limit endpoint, for example because the network is blocked), so the live check could not run. Not a code failure, and the equivalent logic path is covered deterministically by MockedNegativeCaseTests above.
+- `tests.test_github_pull.LiveIntegrationTests.test_live_repo_returns_a_valid_ci_status`: live CI status vocabulary check: the GitHub API quota could not be read from this environment (no usable answer from the rate-limit endpoint, for example because the network is blocked), so the live check could not run. Not a code failure, and the equivalent logic path is covered deterministically by MockedNegativeCaseTests above.
 
 ## Full run output
 
@@ -17,10 +17,29 @@ test_exactly_at_near_limit_threshold (tests.test_pulse_core.BudgetBoundaryTests.
 test_just_under_near_limit_threshold (tests.test_pulse_core.BudgetBoundaryTests.test_just_under_near_limit_threshold) ... ok
 test_one_dollar_over_is_over (tests.test_pulse_core.BudgetBoundaryTests.test_one_dollar_over_is_over) ... ok
 test_planned_zero_does_not_crash (tests.test_pulse_core.BudgetBoundaryTests.test_planned_zero_does_not_crash) ... ok
+test_a_repo_only_in_the_budget_file_does_not_appear (tests.test_pulse_core.BudgetOptionalTests.test_a_repo_only_in_the_budget_file_does_not_appear) ... ok
+test_budget_data_is_ignored_when_not_included (tests.test_pulse_core.BudgetOptionalTests.test_budget_data_is_ignored_when_not_included) ... ok
+test_default_behaviour_is_unchanged_with_budget (tests.test_pulse_core.BudgetOptionalTests.test_default_behaviour_is_unchanged_with_budget) ... ok
+test_load_and_merge_without_a_budget_path_tracks_no_budget (tests.test_pulse_core.BudgetOptionalTests.test_load_and_merge_without_a_budget_path_tracks_no_budget) ... ok
+test_over_budget_does_not_make_a_project_critical_when_not_included (tests.test_pulse_core.BudgetOptionalTests.test_over_budget_does_not_make_a_project_critical_when_not_included) ... ok
+test_position_text_never_mentions_spend_or_budget (tests.test_pulse_core.BudgetOptionalTests.test_position_text_never_mentions_spend_or_budget) ... ok
 test_ci_failure_overrides_active_delivery (tests.test_pulse_core.CodeHealthPriorityTests.test_ci_failure_overrides_active_delivery) ... ok
 test_ci_failure_overrides_stale_too (tests.test_pulse_core.CodeHealthPriorityTests.test_ci_failure_overrides_stale_too) ... ok
 test_no_ci_configured_on_active_project (tests.test_pulse_core.CodeHealthPriorityTests.test_no_ci_configured_on_active_project) ... ok
 test_stale_overrides_no_ci_configured (tests.test_pulse_core.CodeHealthPriorityTests.test_stale_overrides_no_ci_configured) ... ok
+test_a_project_is_not_listed_twice_for_backlog (tests.test_pulse_core.DeriveDecisionsTests.test_a_project_is_not_listed_twice_for_backlog) ... ok
+test_all_clear_gives_a_single_no_action_item (tests.test_pulse_core.DeriveDecisionsTests.test_all_clear_gives_a_single_no_action_item) ... ok
+test_critical_items_come_before_watch_and_clear (tests.test_pulse_core.DeriveDecisionsTests.test_critical_items_come_before_watch_and_clear) ... ok
+test_empty_portfolio_gives_no_decisions (tests.test_pulse_core.DeriveDecisionsTests.test_empty_portfolio_gives_no_decisions) ... ok
+test_failing_build_is_critical_and_cites_its_evidence (tests.test_pulse_core.DeriveDecisionsTests.test_failing_build_is_critical_and_cites_its_evidence) ... ok
+test_growing_backlog_with_merges_is_its_own_item (tests.test_pulse_core.DeriveDecisionsTests.test_growing_backlog_with_merges_is_its_own_item) ... ok
+test_no_machine_style_plurals_anywhere_in_the_output (tests.test_pulse_core.DeriveDecisionsTests.test_no_machine_style_plurals_anywhere_in_the_output) ... ok
+test_open_work_with_no_merges_needs_both_conditions (tests.test_pulse_core.DeriveDecisionsTests.test_open_work_with_no_merges_needs_both_conditions) ... ok
+test_stale_over_a_year_is_an_archive_question (tests.test_pulse_core.DeriveDecisionsTests.test_stale_over_a_year_is_an_archive_question) ... ok
+test_stale_under_a_year_is_a_check_on_it_question (tests.test_pulse_core.DeriveDecisionsTests.test_stale_under_a_year_is_a_check_on_it_question) ... ok
+test_unpulled_repo_is_a_data_gap_not_a_clean_bill (tests.test_pulse_core.DeriveDecisionsTests.test_unpulled_repo_is_a_data_gap_not_a_clean_bill) ... ok
+test_wording_is_plain_english_for_one_and_many (tests.test_pulse_core.DeriveDecisionsTests.test_wording_is_plain_english_for_one_and_many) ... ok
+test_year_boundary_is_exclusive (tests.test_pulse_core.DeriveDecisionsTests.test_year_boundary_is_exclusive) ... ok
 test_missing_both_sources_entirely (tests.test_pulse_core.MissingDataTests.test_missing_both_sources_entirely) ... ok
 test_missing_budget_data (tests.test_pulse_core.MissingDataTests.test_missing_budget_data) ... ok
 test_missing_github_data (tests.test_pulse_core.MissingDataTests.test_missing_github_data) ... ok
@@ -41,9 +60,12 @@ test_commit_entry_not_a_dict_handled_gracefully (tests.test_github_pull.InputVal
 test_commit_missing_nested_fields_handled_gracefully (tests.test_github_pull.InputValidationTests.test_commit_missing_nested_fields_handled_gracefully) ... ok
 test_empty_commit_list_returns_none_none (tests.test_github_pull.InputValidationTests.test_empty_commit_list_returns_none_none) ... ok
 test_well_formed_commit_extracts_correctly (tests.test_github_pull.InputValidationTests.test_well_formed_commit_extracts_correctly) ... ok
-test_live_dormant_repo_is_stale (tests.test_github_pull.LiveIntegrationTests.test_live_dormant_repo_is_stale) ... skipped 'dormant-repo staleness check: GitHub API rate limit was exhausted during this attempt (0 remaining, confirmed immediately after). Not a code failure, an external quota state, and the equivalent logic path is covered deterministically by MockedNegativeCaseTests above.'
+test_a_genuinely_exhausted_quota_is_still_reported_as_exhausted (tests.test_github_pull.LiveIntegrationTests.test_a_genuinely_exhausted_quota_is_still_reported_as_exhausted) ... ok
+test_a_quota_with_calls_remaining_makes_a_none_result_a_failure (tests.test_github_pull.LiveIntegrationTests.test_a_quota_with_calls_remaining_makes_a_none_result_a_failure) ... ok
+test_an_unreadable_quota_is_reported_as_unreadable_not_as_rate_limited (tests.test_github_pull.LiveIntegrationTests.test_an_unreadable_quota_is_reported_as_unreadable_not_as_rate_limited) ... ok
+test_live_dormant_repo_is_stale (tests.test_github_pull.LiveIntegrationTests.test_live_dormant_repo_is_stale) ... skipped 'dormant-repo staleness check: the GitHub API quota could not be read from this environment (no usable answer from the rate-limit endpoint, for example because the network is blocked), so the live check could not run. Not a code failure, and the equivalent logic path is covered deterministically by MockedNegativeCaseTests above.'
 test_live_nonexistent_repo_returns_none (tests.test_github_pull.LiveIntegrationTests.test_live_nonexistent_repo_returns_none) ... ok
-test_live_repo_with_no_ci_configured (tests.test_github_pull.LiveIntegrationTests.test_live_repo_with_no_ci_configured) ... skipped 'no-CI-configured check: GitHub API rate limit was exhausted during this attempt (0 remaining, confirmed immediately after). Not a code failure, an external quota state, and the equivalent logic path is covered deterministically by MockedNegativeCaseTests above.'
+test_live_repo_returns_a_valid_ci_status (tests.test_github_pull.LiveIntegrationTests.test_live_repo_returns_a_valid_ci_status) ... skipped 'live CI status vocabulary check: the GitHub API quota could not be read from this environment (no usable answer from the rate-limit endpoint, for example because the network is blocked), so the live check could not run. Not a code failure, and the equivalent logic path is covered deterministically by MockedNegativeCaseTests above.'
 test_404_on_repo_lookup_returns_none_not_a_crash (tests.test_github_pull.MockedNegativeCaseTests.test_404_on_repo_lookup_returns_none_not_a_crash) ... ok
 test_ci_status_detects_failure_in_check_runs (tests.test_github_pull.MockedNegativeCaseTests.test_ci_status_detects_failure_in_check_runs) ... ok
 test_ci_status_falls_back_to_legacy_when_check_runs_empty (tests.test_github_pull.MockedNegativeCaseTests.test_ci_status_falls_back_to_legacy_when_check_runs_empty) ... ok
@@ -89,11 +111,15 @@ test_fabricated_number_fails (tests.test_grounding_eval.GroundingCheckTests.test
 test_fabricated_status_word_fails (tests.test_grounding_eval.GroundingCheckTests.test_fabricated_status_word_fails) ... ok
 test_fully_grounded_answer_passes (tests.test_grounding_eval.GroundingCheckTests.test_fully_grounded_answer_passes) ... ok
 test_data_question_with_zero_tool_calls_fails_even_with_grounded_text (tests.test_grounding_eval.RunOneEvalGroundingLogicTests.test_data_question_with_zero_tool_calls_fails_even_with_grounded_text) ... ok
-test_200_is_changed_and_updates_cache (tests.test_pulse_scheduler.CheckRepoChangedTests.test_200_is_changed_and_updates_cache) ... ok
-test_304_is_not_changed (tests.test_pulse_scheduler.CheckRepoChangedTests.test_304_is_not_changed) ... ok
-test_failed_request_is_unknown_not_changed (tests.test_pulse_scheduler.CheckRepoChangedTests.test_failed_request_is_unknown_not_changed) ... ok
-test_prior_etag_is_passed_through_to_get_fn (tests.test_pulse_scheduler.CheckRepoChangedTests.test_prior_etag_is_passed_through_to_get_fn) ... ok
+test_change_is_reported_once_then_quiet (tests.test_pulse_scheduler.CheckRepoChangedTests.test_change_is_reported_once_then_quiet) ... ok
+test_different_sha_is_changed_and_updates_cache (tests.test_pulse_scheduler.CheckRepoChangedTests.test_different_sha_is_changed_and_updates_cache) ... ok
+test_etag_churn_with_same_commit_is_not_a_change (tests.test_pulse_scheduler.CheckRepoChangedTests.test_etag_churn_with_same_commit_is_not_a_change) ... ok
+test_failed_request_is_unknown_and_leaves_cache_alone (tests.test_pulse_scheduler.CheckRepoChangedTests.test_failed_request_is_unknown_and_leaves_cache_alone) ... ok
+test_first_observation_records_sha_and_is_not_a_change (tests.test_pulse_scheduler.CheckRepoChangedTests.test_first_observation_records_sha_and_is_not_a_change) ... ok
+test_ok_status_without_a_sha_is_unknown (tests.test_pulse_scheduler.CheckRepoChangedTests.test_ok_status_without_a_sha_is_unknown) ... ok
+test_same_sha_as_last_tick_is_not_changed (tests.test_pulse_scheduler.CheckRepoChangedTests.test_same_sha_as_last_tick_is_not_changed) ... ok
 test_unexpected_status_is_unknown_not_changed (tests.test_pulse_scheduler.CheckRepoChangedTests.test_unexpected_status_is_unknown_not_changed) ... ok
+test_values_saved_under_earlier_schemes_are_ignored (tests.test_pulse_scheduler.CheckRepoChangedTests.test_values_saved_under_earlier_schemes_are_ignored) ... ok
 test_cap_counts_only_the_trailing_window_not_all_history (tests.test_pulse_scheduler.DecideTests.test_cap_counts_only_the_trailing_window_not_all_history) ... ok
 test_cap_reached_blocks_baseline_and_priority_both (tests.test_pulse_scheduler.DecideTests.test_cap_reached_blocks_baseline_and_priority_both) ... ok
 test_failed_pulls_still_count_toward_the_cap (tests.test_pulse_scheduler.DecideTests.test_failed_pulls_still_count_toward_the_cap) ... ok
@@ -104,13 +130,22 @@ test_recent_pull_no_change_detected_is_not_due (tests.test_pulse_scheduler.Decid
 test_recent_pull_no_repos_checked_is_not_due (tests.test_pulse_scheduler.DecideTests.test_recent_pull_no_repos_checked_is_not_due) ... ok
 test_recent_pull_with_change_is_priority_trigger (tests.test_pulse_scheduler.DecideTests.test_recent_pull_with_change_is_priority_trigger) ... ok
 test_unknown_change_result_never_triggers_a_pull (tests.test_pulse_scheduler.DecideTests.test_unknown_change_result_never_triggers_a_pull) ... ok
+test_empty_list_is_unknown (tests.test_pulse_scheduler.FetchLatestShaTests.test_empty_list_is_unknown) ... ok
+test_http_error_status_is_passed_through (tests.test_pulse_scheduler.FetchLatestShaTests.test_http_error_status_is_passed_through) ... ok
+test_malformed_body_is_unknown (tests.test_pulse_scheduler.FetchLatestShaTests.test_malformed_body_is_unknown) ... ok
+test_network_error_is_unknown (tests.test_pulse_scheduler.FetchLatestShaTests.test_network_error_is_unknown) ... ok
+test_reads_sha_from_first_commit (tests.test_pulse_scheduler.FetchLatestShaTests.test_reads_sha_from_first_commit) ... ok
 test_ignores_non_run_started_events (tests.test_pulse_scheduler.LoadRunStartedTimesTests.test_ignores_non_run_started_events) ... ok
 test_missing_log_file_is_empty_not_fatal (tests.test_pulse_scheduler.LoadRunStartedTimesTests.test_missing_log_file_is_empty_not_fatal) ... ok
 test_results_are_sorted (tests.test_pulse_scheduler.LoadRunStartedTimesTests.test_results_are_sorted) ... ok
 test_skips_malformed_lines (tests.test_pulse_scheduler.LoadRunStartedTimesTests.test_skips_malformed_lines) ... ok
+test_defaults_to_local_outside_actions (tests.test_pulse_scheduler.TriggerTests.test_defaults_to_local_outside_actions) ... ok
+test_main_writes_the_trigger_into_the_decision (tests.test_pulse_scheduler.TriggerTests.test_main_writes_the_trigger_into_the_decision) ... ok
+test_manual_dispatch_is_distinguishable_from_schedule (tests.test_pulse_scheduler.TriggerTests.test_manual_dispatch_is_distinguishable_from_schedule) ... ok
+test_reads_the_github_event_name (tests.test_pulse_scheduler.TriggerTests.test_reads_the_github_event_name) ... ok
 
 ----------------------------------------------------------------------
-Ran 92 tests in 3.946s
+Ran 127 tests in 3.325s
 
 OK (skipped=2)
 ```
