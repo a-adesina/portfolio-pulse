@@ -1,12 +1,10 @@
 {
-  "should_pull": false,
-  "reason": "not_due",
-  "checked_at": "2026-11-28T06:02:14Z",
-  "pulls_in_last_24h": 1,
+  "should_pull": true,
+  "reason": "baseline_due",
+  "checked_at": "2026-11-28T16:35:44Z",
+  "pulls_in_last_24h": 0,
   "cap": 3,
   "last_pull_at": "2026-11-27T10:49:22Z",
-  "changed_repos": [],
-  "unknown_repos": [],
-  "reason_detail": "only 19.2h since the last pull (< 24h baseline) and no change detected (or no repos were given to check).",
+  "reason_detail": "29.8h since the last pull, >= the 24h baseline.",
   "trigger": "schedule"
 }
